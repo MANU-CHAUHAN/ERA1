@@ -44,7 +44,7 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    '--lr-scheduler', default="steplr", type=str,
+    '--lr_scheduler', default="steplr", type=str,
     help="Type of Learning Rate scheduler to use.\nAvailable options: 1. `StepLR` 2. `OneCycleLR`"
 )
 
@@ -69,8 +69,13 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    '--max-lr', default=1.23e-03, type=float,
+    '--max_lr', default=1.23e-03, type=float,
     help="The maximum LR to be used with the One Cycle LR Scheduler."
+)
+
+arg_parser.add_argument(
+    '--start_lr', default=1e-03, type=float,
+    help="The start LR to be used with the One Cycle LR Scheduler for the Optimizer."
 )
 
 arg_parser.add_argument(
@@ -84,9 +89,22 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    '--anneal_fn', type=str,
+    '--anneal_fn', type=str, default="linear",
     help="Annealing function to use (Linear or Cosine)"
 )
+
+arg_parser.add_argument(
+    '--cri', type=str, default="crossentropy",
+    help="Criterion to be used (nll_softmax or crossentropy)"
+)
+
+arg_parser.add_argument(
+    '--find_lr', type=bool, default=False,
+    help="To run LR Finder (These are needed: model, criterion, start_lr, max_lr, train_loader, optimizer, *,\
+                  optimizer_type=`adam`,\
+                  weight_decay=4e-4,\
+                  num_iterations=300,\
+                  log_lr=True, step_mode=`exp`)")
 
 arg_parser.add_argument(
     '--Help', action='help', default=argparse.SUPPRESS,
@@ -140,7 +158,11 @@ device = utils.get_device()
 
 lr_scheduler = args.lr_scheduler.lower()
 
-dataloader_args = dict(shuffle=True, batch_size=BATCH, num_workers=2, pin_memory=True)
+find_lr = args.find_lr
+
+criterion = utils.get_string_to_criterion(args.cri)
+
+dataloader_args = dict(shuffle=True, batch_size=BATCH, num_workers=1, pin_memory=False)
 
 train_set, test_set = utils.get_train_test_datasets(data=dataset, model=model, lr_scheduler=lr_scheduler)
 
@@ -154,18 +176,25 @@ model = utils.get_model_name_to_model_object(model_name=model)
 
 optimizer = utils.get_optimizer(model=model, optim_type=optimizer, lr=args.lr)
 
-lr_scheduler = utils.get_lr_scheduler(scheduler_name=args.scheduler,
-                                      optimizer=optimizer,
-                                      step_size=args.step_size,
-                                      gamma=args.gamma, total_epochs=epochs, pct_start=pct_start,
-                                      anneal_strategy=anneal_fn,
-                                      train_loader=train_loader)
+if find_lr:
+    utils.run_lr_finder(model=model, criterion=criterion, start_lr=args.start_lr, max_lr=args.max_lr,
+                        train_loader=train_loader, optimizer=optimizer)
+else:
+    lr_scheduler = utils.get_lr_scheduler(scheduler_name=lr_scheduler,
+                                          optimizer=optimizer,
+                                          step_size=args.step_size,
+                                          gamma=args.gamma, total_epochs=epochs, pct_start=pct_start,
+                                          anneal_strategy=anneal_fn,
+                                          train_loader=train_loader)
 
-utils.run_train_and_test(model=model, device=device, train_loader=train_loader, test_loader=test_loader,
-                         optimizer=optimizer, criterion=nn.CrossEntropyLoss(), scheduler=lr_scheduler, epochs=epochs)
+    utils.run_train_and_test(model=model, device=device, train_loader=train_loader, test_loader=test_loader,
+                             optimizer=optimizer, criterion=nn.CrossEntropyLoss(), scheduler=lr_scheduler, epochs=epochs)
 
 # results = utils.train_eval_model(False, model, train_loader, optimizer, device, epochs=epochs, test=True,
 #                                  test_loader=test_loader, scheduler=lr_scheduler)
 #
 # utils.plot_graphs(train_losses=results["train_losses"], test_losses=results["test_losses"],
 #                   train_accuracy=results["train_accuracies"], test_accuracy=results["test_accuracies"])
+
+if __name__ == "__main__":
+    pass

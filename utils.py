@@ -1,8 +1,8 @@
 import datetime
 from typing import Callable, Optional
-
+from torchvision.datasets import CIFAR10, MNIST
 import albumentations as A
-from albumentations.pytorch.transforms import ToTensor, ToTensorV2
+from albumentations.pytorch.transforms import ToTensorV2
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
@@ -13,7 +13,7 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 import torchvision.transforms as transforms
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 import models
 
@@ -25,20 +25,34 @@ def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def get_mean_and_std(dataset):
+def get_mean_and_std(dataset, name=None):
     '''Compute the mean and std value of dataset.'''
+
+    # if isinstance(dataset, CIFAR10) or isinstance(dataset, MNIST):
+    #     std, mean = torch.std_mean(dataset.data, axis=(0, 2, 3))
+    #     return mean, std
+
     dataloader = torch.utils.data.DataLoader(
         dataset, batch_size=1, shuffle=True, num_workers=4)
     mean = torch.zeros(3)
     std = torch.zeros(3)
-    print("⏳ Computing mean and std...")
-    for inputs, targets in dataloader:
-        for i in range(3):
-            mean[i] += inputs[:, i, :, :].mean()
-            std[i] += inputs[:, i, :, :].std()
-    mean.div_(len(dataset))
-    std.div_(len(dataset))
-    return mean.tolist(), std.tolist()
+
+    print("⏳ Computing mean and standard deviation...")
+
+    if name and "cifar10" in name:
+        mean, std = [0.49140048027038574, 0.4821575880050659, 0.44652876257896423], \
+            [0.20230130851268768, 0.1994125247001648, 0.2009602189064026]
+    else:
+        for inputs, targets in dataloader:
+            for i in range(3):
+                mean[i] += inputs[:, i, :, :].mean()
+                std[i] += inputs[:, i, :, :].std()
+
+        mean = (mean.div_(len(dataset))).tolist()
+        std = (std.div_(len(dataset))).tolist()
+
+    print("\nDone ✅")
+    return mean, std
 
 
 class Cifar10Dataset(torchvision.datasets.CIFAR10):
@@ -290,9 +304,9 @@ def get_lr_scheduler(*, scheduler_name, optimizer, train_loader, max_lr=1.25E-03
 
 
 def run_lr_finder(model, criterion, start_lr, max_lr, train_loader, optimizer, *,
-                  optimizer_type="SGD",
-                  weight_decay=1e-4,
-                  num_iterations=200,
+                  optimizer_type="adam",
+                  weight_decay=4e-4,
+                  num_iterations=300,
                   log_lr=True, step_mode="exp"):
     """
     Torch Learning Rate finder, helps to run iterations to determine changing loss and plot the graph for Loss & Epochs.
@@ -325,6 +339,13 @@ def run_lr_finder(model, criterion, start_lr, max_lr, train_loader, optimizer, *
     lr_finder.range_test(train_loader, end_lr=max_lr, num_iter=num_iterations, step_mode=step_mode)
     lr_finder.plot(log_lr=log_lr)
     lr_finder.reset()
+
+
+def get_string_to_criterion(cri_str):
+    if "crossentropy" in cri_str:
+        return nn.CrossEntropyLoss()
+    elif "nll" in cri_str:
+        return F.nll_loss
 
 
 def train(model: nn.Module, device: torch.device, train_loader: torch.utils.data.DataLoader,
@@ -529,14 +550,15 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
         test_set = torchvision.datasets.MNIST(
             root='../data', train=False, download=True, transform=test_transforms)
 
-        return {"train_set": train_set, "test_set": test_set}
+        return train_set, test_set
+
     elif "cifar10" in data:
         mean, sdev = get_mean_and_std(torchvision.datasets.CIFAR10(root="./data",
                                                                    train=True,
                                                                    download=True,
                                                                    transform=transforms.Compose(
                                                                        [transforms.ToTensor()])))
-        if "custom_resnet" in model and "one_cycle" in lr_scheduler:
+        if "resnet" in model and "onecycle" in lr_scheduler:
             train_transforms = A.Compose([
                 A.Normalize(mean=mean, std=sdev, always_apply=True),
                 A.PadIfNeeded(min_height=40, min_width=40,
@@ -544,7 +566,7 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
                 A.RandomCrop(32, 32, always_apply=True),
                 A.HorizontalFlip(p=0.5),
                 A.Cutout(num_holes=1, max_h_size=8,
-                         max_w_size=8, fill_value=mean, p=1),
+                         max_w_size=8, fill_value=mean, p=0.5),
                 ToTensorV2()
             ])
 
@@ -567,12 +589,12 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
                 #   A.GaussianBlur(blur_limit=3, p=0.12),
                 # A.RandomBrightnessContrast(brightness_limit=0.09,contrast_limit=0.1, p=0.15),
                 A.Normalize(mean=mean, std=sdev),
-                ToTensor()
+                ToTensorV2()
             ])
 
             test_transforms = A.Compose([
                 A.Normalize(mean=mean, std=sdev),
-                ToTensor()
+                ToTensorV2()
             ])
 
         train_set = Cifar10Dataset(
@@ -581,7 +603,7 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
         test_set = Cifar10Dataset(
             train=False, download=True, transform=test_transforms)
 
-        return {"train_set": train_set, "test_set": test_set}
+        return train_set, test_set
 
 
 if __name__ == "__main__":
