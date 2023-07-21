@@ -607,19 +607,38 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
         return train_set, test_set
 
 
+import subprocess
+
+import subprocess
+
+
+def check_requirements(requirements_file='requirements.txt'):
+    try:
+        # Use the 'pip check' command to check if all requirements are already installed
+        result = subprocess.run(['pip', 'check', '-r', requirements_file], stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, text=True)
+        return result.returncode == 0  # All requirements are already installed if returncode is 0
+    except FileNotFoundError:
+        return False  # pip command not found
+
+
 def install_requirements(requirements_file='requirements.txt'):
+    if check_requirements(requirements_file):
+        print("All requirements already installed.")
+        return
+
     try:
         # Use the 'pip install' command to install the packages from the requirements file
-        subprocess.check_call(['pip', 'install', '-r', requirements_file])
-        print("All requirements installed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while installing requirements: {e}")
+        result = subprocess.run(['pip', 'install', '-r', requirements_file], stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, text=True)
+        if result.returncode == 0:
+            print("All requirements installed successfully.")
+        else:
+            print("An error occurred while installing requirements:")
+            print(result.stderr)
     except FileNotFoundError:
         print("Error: 'pip' command not found. Please ensure you have Python and pip installed.")
 
-
-# Call the function to install the requirements
-install_requirements()
 
 if __name__ == "__main__":
     mean, sdev = get_mean_and_std(torchvision.datasets.CIFAR10(root="./data", train=True,
