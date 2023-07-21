@@ -101,7 +101,7 @@ arg_parser.add_argument(
 
 arg_parser.add_argument(
     '--cri', type=str, default="crossentropy",
-    help="Criterion to be used (nll_softmax or crossentropy)"
+    help="Criterion to be used (nll or crossentropy)"
 )
 
 arg_parser.add_argument(

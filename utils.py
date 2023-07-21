@@ -300,10 +300,10 @@ def get_lr_scheduler(*, scheduler_name, optimizer, train_loader, max_lr=1.25E-03
                                                    verbose=verbose)
 
 
-def run_lr_finder(model, criterion, start_lr, max_lr, train_loader, optimizer, *,
+def run_lr_finder(model, criterion, start_lr, train_loader, optimizer, *,
                   optimizer_type="adam",
                   weight_decay=4e-4,
-                  num_iterations=300,
+                  num_iterations=300, max_lr=10,
                   log_lr=True, step_mode="exp"):
     """
     Torch Learning Rate finder, helps to run iterations to determine changing loss and plot the graph for Loss & Epochs.
@@ -456,6 +456,8 @@ def run_train_and_test(*, model, device, train_loader, test_loader, optimizer, c
     train_accuracy = []
     test_accuracy = []
 
+    print("\n➤ Training started...→")
+
     for epoch in range(epochs):
         train(model=model,
               device=device,
@@ -543,10 +545,10 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
         ])
 
         train_set = torchvision.datasets.MNIST(
-            root='../data', train=True, download=True, transform=train_transforms)
+            root='./data', train=True, download=True, transform=train_transforms)
 
         test_set = torchvision.datasets.MNIST(
-            root='../data', train=False, download=True, transform=test_transforms)
+            root='./data', train=False, download=True, transform=test_transforms)
 
         return train_set, test_set
 
