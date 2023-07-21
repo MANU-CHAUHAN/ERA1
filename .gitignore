@@ -1,0 +1,26 @@
+# Ignore __pycache__ directories
+**/__pycache__/
+
+# Ignore .pyc files
+**/*.pyc
+
+# Ignore .pyo files
+**/*.pyo
+
+# Ignore .pyd files
+**/*.pyd
+
+# Ignore .pyz files
+**/*.pyz
+
+# Ignore .pyw files
+**/*.pyw
+
+# Ignore .idea directory
+.idea/
+
+# Ignore .vscode directory (if using VSCode as well)
+.vscode/
+
+# Ignore tensorboard runs
+runs/*
