@@ -561,12 +561,11 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
         if "resnet" in model and "onecycle" in lr_scheduler:
             train_transforms = A.Compose([
                 A.Normalize(mean=mean, std=sdev, always_apply=True),
-                A.PadIfNeeded(min_height=40, min_width=40,
-                              border_mode=cv2.BORDER_CONSTANT, value=mean, always_apply=True),
+                A.PadIfNeeded(min_height=40, min_width=40, border_mode=cv2.BORDER_CONSTANT, value=mean,
+                              always_apply=True),
                 A.RandomCrop(32, 32, always_apply=True),
                 A.HorizontalFlip(p=0.5),
-                A.Cutout(num_holes=1, max_h_size=8,
-                         max_w_size=8, fill_value=mean, p=0.5),
+                A.Cutout(num_holes=1, max_h_size=8, max_w_size=8, fill_value=mean, p=0.5),
                 ToTensorV2()
             ])
 
