@@ -1,6 +1,5 @@
 import datetime
 from typing import Callable, Optional
-from torchvision.datasets import CIFAR10, MNIST
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
 import cv2
@@ -26,24 +25,21 @@ def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def get_mean_and_std(dataset, name=None):
-    '''Compute the mean and std value of dataset.'''
+def get_mean_and_std(dataset):
+    """Compute the mean and std value of dataset."""
 
-    # if isinstance(dataset, CIFAR10) or isinstance(dataset, MNIST):
-    #     std, mean = torch.std_mean(dataset.data, axis=(0, 2, 3))
-    #     return mean, std
+    print("\n\n⏳ Computing mean and standard deviation...")
 
-    dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=1, shuffle=True, num_workers=4)
-    mean = torch.zeros(3)
-    std = torch.zeros(3)
+    if isinstance(dataset, torchvision.datasets.CIFAR10):
+        mean = (np.mean(dataset.data, axis=(0, 1, 2))/255).tolist()
 
-    print("⏳ Computing mean and standard deviation...")
-
-    if name and "cifar10" in name:
-        mean, std = [0.49140048027038574, 0.4821575880050659, 0.44652876257896423], \
-            [0.20230130851268768, 0.1994125247001648, 0.2009602189064026]
+        std = (np.std(dataset.data, axis=(0, 1, 2))/255).tolist()
     else:
+        dataloader = torch.utils.data.DataLoader(
+            dataset, batch_size=1, shuffle=True, num_workers=4)
+        mean = torch.zeros(3)
+        std = torch.zeros(3)
+
         for inputs, targets in dataloader:
             for i in range(3):
                 mean[i] += inputs[:, i, :, :].mean()

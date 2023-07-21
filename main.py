@@ -5,6 +5,9 @@ import torch
 import torch.nn as nn
 
 import utils
+import warnings
+
+warnings.filterwarnings("ignore")
 
 utils.install_requirements()
 
