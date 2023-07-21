@@ -31,9 +31,9 @@ def get_mean_and_std(dataset):
     print("\n\n⏳ Computing mean and standard deviation...")
 
     if isinstance(dataset, torchvision.datasets.CIFAR10):
-        mean = (np.mean(dataset.data, axis=(0, 1, 2))/255).tolist()
+        mean = (np.mean(dataset.data, axis=(0, 1, 2)) / 255).tolist()
 
-        std = (np.std(dataset.data, axis=(0, 1, 2))/255).tolist()
+        std = (np.std(dataset.data, axis=(0, 1, 2)) / 255).tolist()
     else:
         dataloader = torch.utils.data.DataLoader(
             dataset, batch_size=1, shuffle=True, num_workers=4)
@@ -57,7 +57,7 @@ class Cifar10Dataset(torchvision.datasets.CIFAR10):
     Custom Dataset class for CIFAR10 using provided augmentations.
     """
 
-    def __init__(self, root="./data/cifar10", train=True, download=True, transform=None):
+    def __init__(self, root="./data", train=True, download=True, transform=None):
         super().__init__(root=root, train=train, download=download, transform=transform)
 
     def __getitem__(self, index):
@@ -336,6 +336,7 @@ def run_lr_finder(model, criterion, start_lr, max_lr, train_loader, optimizer, *
     lr_finder.range_test(train_loader, end_lr=max_lr, num_iter=num_iterations, step_mode=step_mode)
     lr_finder.plot(log_lr=log_lr)
     lr_finder.reset()
+    plt.show()
 
 
 def get_string_to_criterion(cri_str):
@@ -637,8 +638,9 @@ def install_requirements(requirements_file='requirements.txt'):
 
 
 if __name__ == "__main__":
-    mean, sdev = get_mean_and_std(torchvision.datasets.CIFAR10(root="./data", train=True,
-                                                               download=True,
-                                                               transform=transforms.Compose([transforms.ToTensor()])))
-
-    print(mean, sdev)
+    pass
+    # mean, sdev = get_mean_and_std(torchvision.datasets.CIFAR10(root="./data", train=True,
+    #                                                            download=True,
+    #                                                            transform=transforms.Compose([transforms.ToTensor()])))
+    #
+    # print(mean, sdev)
