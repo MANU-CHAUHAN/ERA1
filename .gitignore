@@ -27,3 +27,5 @@ data/*
 
 # Ignore tensorboard runs
 runs/*
+
+.DS_Store
