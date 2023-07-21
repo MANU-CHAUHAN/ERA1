@@ -23,6 +23,7 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescri
     pass
 
 
+
 arg_parser = argparse.ArgumentParser(
     description="Training Deep Learning program for various models with multiple options.",
     formatter_class=CustomFormatter
@@ -89,7 +90,7 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    '--pct_start', default=0.20, type=float,
+    '--pct_start', default=0.20, type=utils.fraction_to_float,
     help="The end of the warm-up phase and the peak or max LR epoch as a float value out of the total epochs."
 )
 
@@ -110,6 +111,11 @@ arg_parser.add_argument(
                   weight_decay=4e-4,\
                   num_iterations=300,\
                   log_lr=True, step_mode=`exp`)")
+
+arg_parser.add_argument(
+    '--find_lr_iter', default=200, type=int,
+    help="The number of iterations to use in LR finder."
+)
 
 arg_parser.add_argument(
     '--Help', action='help', default=argparse.SUPPRESS,
@@ -165,6 +171,8 @@ lr_scheduler = args.lr_scheduler.lower()
 
 find_lr = args.find_lr
 
+find_lr_iter = args.find_lr_iter
+
 criterion = utils.get_string_to_criterion(args.cri)
 
 dataloader_args = dict(shuffle=True, batch_size=BATCH, num_workers=1, pin_memory=False)
@@ -183,7 +191,7 @@ optimizer = utils.get_optimizer(model=model, optim_type=optimizer, lr=args.lr)
 
 if find_lr:
     utils.run_lr_finder(model=model, criterion=criterion, start_lr=args.start_lr, max_lr=args.max_lr,
-                        train_loader=train_loader, optimizer=optimizer)
+                        train_loader=train_loader, optimizer=optimizer, num_iterations=find_lr_iter)
 else:
     lr_scheduler = utils.get_lr_scheduler(scheduler_name=lr_scheduler,
                                           optimizer=optimizer,

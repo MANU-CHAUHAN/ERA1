@@ -328,7 +328,7 @@ def run_lr_finder(model, criterion, start_lr, max_lr, train_loader, optimizer, *
 
     """
     from torch_lr_finder import LRFinder
-
+    print("\n\nRunning LR finder... 🔍👀  ")
     if not optimizer:
         optimizer = get_optimizer(model=model, optim_type=optimizer_type, lr=start_lr, weight_decay=weight_decay)
 
@@ -635,6 +635,17 @@ def install_requirements(requirements_file='requirements.txt'):
             print(result.stderr)
     except FileNotFoundError:
         print("Error: 'pip' command not found. Please ensure you have Python and pip installed.")
+
+
+def fraction_to_float(value):
+    if isinstance(value, str):
+        if '/' in value:
+            numerator, denominator = map(float, value.split('/'))
+            return numerator / denominator
+        else:
+            return float(value)
+    else:
+        return float(value)
 
 
 if __name__ == "__main__":
