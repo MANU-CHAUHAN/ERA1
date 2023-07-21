@@ -14,6 +14,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 import torchvision.transforms as transforms
 from tqdm import tqdm
+import subprocess
 
 import models
 
@@ -605,6 +606,20 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
 
         return train_set, test_set
 
+
+def install_requirements(requirements_file='requirements.txt'):
+    try:
+        # Use the 'pip install' command to install the packages from the requirements file
+        subprocess.check_call(['pip', 'install', '-r', requirements_file])
+        print("All requirements installed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while installing requirements: {e}")
+    except FileNotFoundError:
+        print("Error: 'pip' command not found. Please ensure you have Python and pip installed.")
+
+
+# Call the function to install the requirements
+install_requirements()
 
 if __name__ == "__main__":
     mean, sdev = get_mean_and_std(torchvision.datasets.CIFAR10(root="./data", train=True,

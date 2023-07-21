@@ -6,6 +6,8 @@ import torch.nn as nn
 
 import utils
 
+utils.install_requirements()
+
 cv = partial(nn.Conv2d, bias=False)
 bn = nn.BatchNorm2d
 relu = nn.ReLU
@@ -188,7 +190,8 @@ else:
                                           train_loader=train_loader)
 
     utils.run_train_and_test(model=model, device=device, train_loader=train_loader, test_loader=test_loader,
-                             optimizer=optimizer, criterion=nn.CrossEntropyLoss(), scheduler=lr_scheduler, epochs=epochs)
+                             optimizer=optimizer, criterion=nn.CrossEntropyLoss(), scheduler=lr_scheduler,
+                             epochs=epochs)
 
 # results = utils.train_eval_model(False, model, train_loader, optimizer, device, epochs=epochs, test=True,
 #                                  test_loader=test_loader, scheduler=lr_scheduler)

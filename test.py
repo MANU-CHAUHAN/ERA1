@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 
 if __name__ == "__main__":
+    utils.install_requirements()
     model = "s10resnet"
 
     optimizer = "adam"
