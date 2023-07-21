@@ -1,17 +1,21 @@
 import datetime
 from typing import Callable, Optional
 
+import albumentations as A
+from albumentations.pytorch.transforms import ToTensor, ToTensorV2
+import cv2
+from matplotlib import pyplot as plt
+import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 import torchvision.transforms as transforms
-from matplotlib import pyplot as plt
-import torch.optim as optim
 from tqdm.notebook import tqdm
-import torch.nn.functional as F
+
 import models
-import torch.optim.lr_scheduler as lr_scheduler
-import numpy as np
-import torch.nn as nn
 
 
 def get_device():
@@ -27,7 +31,7 @@ def get_mean_and_std(dataset):
         dataset, batch_size=1, shuffle=True, num_workers=4)
     mean = torch.zeros(3)
     std = torch.zeros(3)
-    print('==> Computing mean and std..')
+    print("⏳ Computing mean and std...")
     for inputs, targets in dataloader:
         for i in range(3):
             mean[i] += inputs[:, i, :, :].mean()
@@ -464,6 +468,7 @@ def plot_cifar10_aug_images(*, train_loader):
     -------
 
     """
+
     # channel_means = (0.49196659, 0.48229005, 0.4461573)
     # channel_stdevs = (0.24703223, 0.24348513, 0.26158784)
     def unnormalize(img):
@@ -499,6 +504,84 @@ def plot_cifar10_aug_images(*, train_loader):
             plt.imshow(unnormalize(images[idx[j - 1]]), interpolation='none')
             plt.axis('off')
     plt.show()
+
+
+def get_train_test_datasets(data, model, lr_scheduler=None):
+    if "mnist" in data:
+        train_transforms = transforms.Compose([
+            transforms.RandomRotation((-6.9, 6.9), fill=(1,)),
+            # translate=(0.1, 0.1), scale=(0.8, 1.2)),
+            transforms.RandomAffine(degrees=15),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=(0.1307,), std=(0.3081,))
+        ])
+
+        # Test data transformations
+
+        test_transforms = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=(0.1307,), std=(0.3081,))
+        ])
+
+        train_set = torchvision.datasets.MNIST(
+            root='../data', train=True, download=True, transform=train_transforms)
+
+        test_set = torchvision.datasets.MNIST(
+            root='../data', train=False, download=True, transform=test_transforms)
+
+        return {"train_set": train_set, "test_set": test_set}
+    elif "cifar10" in data:
+        mean, sdev = get_mean_and_std(torchvision.datasets.CIFAR10(root="./data",
+                                                                   train=True,
+                                                                   download=True,
+                                                                   transform=transforms.Compose(
+                                                                       [transforms.ToTensor()])))
+        if "custom_resnet" in model and "one_cycle" in lr_scheduler:
+            train_transforms = A.Compose([
+                A.Normalize(mean=mean, std=sdev, always_apply=True),
+                A.PadIfNeeded(min_height=40, min_width=40,
+                              border_mode=cv2.BORDER_CONSTANT, value=mean, always_apply=True),
+                A.RandomCrop(32, 32, always_apply=True),
+                A.HorizontalFlip(p=0.5),
+                A.Cutout(num_holes=1, max_h_size=8,
+                         max_w_size=8, fill_value=mean, p=1),
+                ToTensorV2()
+            ])
+
+            test_transforms = A.Compose([
+                A.Normalize(mean=mean, std=sdev,
+                            always_apply=True),
+                A.HorizontalFlip(p=0.5),
+                ToTensorV2()
+            ])
+        else:
+            train_transforms = A.Compose([
+                A.HorizontalFlip(p=0.2),
+                A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.15,
+                                   rotate_limit=30, p=0.20),
+                A.CoarseDropout(max_holes=1, p=0.15, max_height=16,
+                                max_width=16, min_holes=1, min_height=16,
+                                min_width=16, fill_value=mean),
+                # A.MedianBlur(blur_limit=3, p=0.1),
+                A.HueSaturationValue(p=0.1),
+                #   A.GaussianBlur(blur_limit=3, p=0.12),
+                # A.RandomBrightnessContrast(brightness_limit=0.09,contrast_limit=0.1, p=0.15),
+                A.Normalize(mean=mean, std=sdev),
+                ToTensor()
+            ])
+
+            test_transforms = A.Compose([
+                A.Normalize(mean=mean, std=sdev),
+                ToTensor()
+            ])
+
+        train_set = Cifar10Dataset(
+            train=True, download=True, transform=train_transforms)
+
+        test_set = Cifar10Dataset(
+            train=False, download=True, transform=test_transforms)
+
+        return {"train_set": train_set, "test_set": test_set}
 
 
 if __name__ == "__main__":
