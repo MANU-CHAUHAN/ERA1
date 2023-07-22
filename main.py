@@ -94,6 +94,11 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
+    '--cutout_prob', default=0.5, type=float,
+    help="The probability to apply cutout in Transforms part, [0,1] float."
+)
+
+arg_parser.add_argument(
     '--anneal_fn', type=str, default="linear",
     help="Annealing function to use (Linear or Cosine)"
 )
@@ -160,6 +165,8 @@ pct_start = args.pct_start
 
 anneal_fn = args.anneal_fn
 
+cutout_prob = args.cutout_prob
+
 dataset = args.dataset.lower()
 
 BATCH = args.batch
@@ -176,7 +183,8 @@ criterion = utils.get_string_to_criterion(args.cri)
 
 dataloader_args = dict(shuffle=True, batch_size=BATCH, num_workers=1, pin_memory=False)
 
-train_set, test_set, mean, sdev = utils.get_train_test_datasets(data=dataset, model=model, lr_scheduler=lr_scheduler)
+train_set, test_set, mean, sdev = utils.get_train_test_datasets(data=dataset, model=model, lr_scheduler=lr_scheduler,
+                                                                cutout_prob=cutout_prob)
 
 # data loaders on data sets
 train_loader = torch.utils.data.DataLoader(

@@ -543,7 +543,7 @@ def plot_cifar10_aug_images(train_loader, mean, sdev):
     plt.show()
 
 
-def get_train_test_datasets(data, model, lr_scheduler=None):
+def get_train_test_datasets(data, model, cutout_prob=0.5, lr_scheduler=None):
     if "mnist" in data:
         train_transforms = transforms.Compose([
             transforms.RandomRotation((-6.9, 6.9), fill=(1,)),
@@ -581,7 +581,7 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
                               always_apply=True),
                 A.RandomCrop(32, 32, always_apply=True),
                 A.HorizontalFlip(p=0.5),
-                A.Cutout(num_holes=1, max_h_size=8, max_w_size=8, fill_value=mean, p=0.95),
+                A.Cutout(num_holes=1, max_h_size=8, max_w_size=8, fill_value=mean, p=cutout_prob),
                 ToTensorV2()
             ])
 
