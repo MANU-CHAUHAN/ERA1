@@ -40,15 +40,14 @@ if __name__ == "__main__":
 
     optimizer = utils.get_optimizer(model=model, optim_type=optimizer)
 
-    utils.run_lr_finder(model=model, criterion=nn.CrossEntropyLoss(), start_lr=start_lr, max_lr=12,
-                        train_loader=train_loader, optimizer=optimizer, num_iterations=500)
+    # utils.run_lr_finder(model=model, criterion=nn.CrossEntropyLoss(), start_lr=start_lr, max_lr=12,
+    #                     train_loader=train_loader, optimizer=optimizer, num_iterations=500)
 
     lr_scheduler = utils.get_lr_scheduler(scheduler_name=lr_scheduler,
                                           optimizer=optimizer,
-                                          step_size=1,
                                           total_epochs=epochs, pct_start=pct_start,
                                           anneal_strategy=anneal_fn,
-                                          train_loader=train_loader)
+                                          train_loader=train_loader, max_lr=max_lr)
 
     utils.run_train_and_test(model=model, device=device, train_loader=train_loader, test_loader=test_loader,
                              optimizer=optimizer, criterion=utils.get_string_to_criterion("crossentropy"),

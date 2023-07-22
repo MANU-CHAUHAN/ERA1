@@ -188,12 +188,15 @@ model = utils.get_model_name_to_model_object(model_name=model)
 
 optimizer = utils.get_optimizer(model=model, optim_type=optimizer, lr=args.lr)
 
+max_lr = args.max_lr
+
 if find_lr:
-    utils.run_lr_finder(model=model, criterion=criterion, start_lr=args.start_lr, max_lr=args.max_lr,
+    utils.run_lr_finder(model=model, criterion=criterion, start_lr=args.start_lr, max_lr=max_lr,
                         train_loader=train_loader, optimizer=optimizer, num_iterations=find_lr_iter)
 else:
     if "cifar10" in dataset:
         utils.plot_cifar10_aug_images(train_loader=train_loader, mean=mean, sdev=sdev)
+
     lr_scheduler = utils.get_lr_scheduler(scheduler_name=lr_scheduler,
                                           optimizer=optimizer,
                                           step_size=args.step_size,
@@ -201,7 +204,7 @@ else:
                                           total_epochs=epochs,
                                           pct_start=pct_start,
                                           anneal_strategy=anneal_fn,
-                                          train_loader=train_loader)
+                                          train_loader=train_loader, max_lr=max_lr)
 
     utils.run_train_and_test(model=model, device=device, train_loader=train_loader, test_loader=test_loader,
                              optimizer=optimizer, criterion=nn.CrossEntropyLoss(), scheduler=lr_scheduler,

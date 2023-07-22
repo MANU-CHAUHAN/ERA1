@@ -309,7 +309,7 @@ def get_lr_scheduler(scheduler_name, optimizer, train_loader, total_epochs, max_
     if "steplr" in scheduler_name:
         return lr_scheduler.StepLR(optimizer=optimizer, step_size=step_size, gamma=gamma)
 
-    elif "onecycle" in scheduler_name:
+    elif "onecyc" in scheduler_name:
         return torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer,
                                                    max_lr=max_lr,
                                                    steps_per_epoch=len(train_loader),
@@ -371,7 +371,6 @@ def get_string_to_criterion(cri_str):
         return F.nll_loss
 
 
-@log_inputs_and_output
 def train(model: nn.Module, device: torch.device, train_loader: torch.utils.data.DataLoader,
           optimizer: torch.optim.Optimizer, scheduler: Callable[[Optional[torch.Tensor]], float],
           criterion: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
@@ -431,7 +430,6 @@ def train(model: nn.Module, device: torch.device, train_loader: torch.utils.data
     train_acc.append(acc)
 
 
-@log_inputs_and_output
 def test(model, device, test_loader, test_acc, test_losses):
     """
 
@@ -588,7 +586,7 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
                                                                    download=True,
                                                                    transform=transforms.Compose(
                                                                        [transforms.ToTensor()])))
-        if "resnet" in model and "onecycle" in lr_scheduler:
+        if "resnet" in model and "onecyc" in lr_scheduler.lower():
             train_transforms = A.Compose([
                 A.Normalize(mean=mean, std=sdev, always_apply=True),
                 A.PadIfNeeded(min_height=40, min_width=40, border_mode=cv2.BORDER_CONSTANT, value=mean,
