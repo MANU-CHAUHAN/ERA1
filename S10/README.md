@@ -148,7 +148,7 @@ Estimated Total Size (MB): 31.53
 
 
 
-#### Notebooks and process:
+#### Notebooks and musings:
 
 1. Tried with the given architecture straight forward and the augmnetations.
 
@@ -160,4 +160,8 @@ Estimated Total Size (MB): 31.53
 
 5. The `direct` notebook clones repo and runs the command line tool to find lr and then the suggessted LR is used to OneCycle Policy with all required arguments passed (file name: `S10_direct_in_colab.ipynb`).
 
-   
+6. The augmentations used clearly helped to smooth out (and in some cases widen) the loss curve with iterations during LR finder too.
+
+7. Small value of ColorJitter was tried and that helped a little but soon a decent value was excessive as network failed to cross 90-92% for training phase.
+
+8. DID NOT USE **0.175** to multiply with output of FC layer.
