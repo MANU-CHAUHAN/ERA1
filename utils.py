@@ -347,7 +347,7 @@ def run_lr_finder(model, criterion, start_lr, train_loader, optimizer,
 
     print(f"\n\nRunning LR finder... 🔍👀 \nStart LR: {start_lr}, End LR: {max_lr}, iterations: {num_iterations},"
           f" step mode: {step_mode}\n")
-    
+
     if not optimizer:
         optimizer = get_optimizer(model=model, optim_type=optimizer_type, lr=start_lr, weight_decay=weight_decay)
 
@@ -546,7 +546,7 @@ def plot_cifar10_aug_images(train_loader, mean, sdev):
     plt.show()
 
 
-def get_train_test_datasets(data, model, cutout_prob=0.5, lr_scheduler=None):
+def get_train_test_datasets(data, model, cutout_prob=0.2, lr_scheduler=None):
     if "mnist" in data:
         train_transforms = transforms.Compose([
             transforms.RandomRotation((-6.9, 6.9), fill=(1,)),

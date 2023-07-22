@@ -94,7 +94,7 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    '--cutout_prob', default=0.5, type=float,
+    '--cutout_prob', default=0.2, type=float,
     help="The probability to apply cutout in Transforms part, [0,1] float."
 )
 
