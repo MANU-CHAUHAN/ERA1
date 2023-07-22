@@ -18,20 +18,20 @@ import subprocess
 import models
 
 
-def log_inputs_and_output(func):
-    def wrapper(*args, **kwargs):
-        # Log the function call with its inputs
-        print(f"Function {func.__name__} called with args: {args}, kwargs: {kwargs}")
-
-        # Call the original function and get its return value
-        result = func(*args, **kwargs)
-
-        # Log the return value
-        print(f"Function {func.__name__} returned: {result}")
-
-        return result
-
-    return wrapper
+# def log_inputs_and_output(func):
+#     def wrapper(*args, **kwargs):
+#         # Log the function call with its inputs
+#         print(f"Function {func.__name__} called with args: {args}, kwargs: {kwargs}")
+#
+#         # Call the original function and get its return value
+#         result = func(*args, **kwargs)
+#
+#         # Log the return value
+#         print(f"Function {func.__name__} returned: {result}")
+#
+#         return result
+#
+#     return wrapper
 
 
 def get_device():
@@ -41,7 +41,6 @@ def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-@log_inputs_and_output
 def get_mean_and_std(dataset):
     """Compute the mean and std value of dataset."""
 
@@ -69,7 +68,6 @@ def get_mean_and_std(dataset):
     return mean, std
 
 
-@log_inputs_and_output
 class Cifar10Dataset(torchvision.datasets.CIFAR10):
     """
     Custom Dataset class for CIFAR10 using provided augmentations.
@@ -88,7 +86,6 @@ class Cifar10Dataset(torchvision.datasets.CIFAR10):
         return image, label
 
 
-@log_inputs_and_output
 def plot_graphs(train_losses, train_accuracy, test_losses, test_accuracy):
     """
     Plot 2 graphs after training and evaluation is done.
@@ -118,7 +115,6 @@ def plot_graphs(train_losses, train_accuracy, test_losses, test_accuracy):
     plt.show()
 
 
-@log_inputs_and_output
 def get_optimizer(model, optim_type="adam", lr=0.001, enable_nesterov=False, momentum_value=0.9, weight_decay=5e-4):
     """
     Returns optimizer based in passed values
@@ -140,7 +136,6 @@ def get_optimizer(model, optim_type="adam", lr=0.001, enable_nesterov=False, mom
     return optimizer
 
 
-@log_inputs_and_output
 def train_eval_model(model, train_loader, optimizer, device, epochs=1, test=False, test_loader=None,
                      scheduler=None, save_model=False):
     """
@@ -257,7 +252,6 @@ def train_eval_model(model, train_loader, optimizer, device, epochs=1, test=Fals
             "test_accuracy": test_accuracies}
 
 
-@log_inputs_and_output
 def get_model_name_to_model_object(model_name):
     """
     Returns the model for the corresponding name passed.
@@ -278,7 +272,6 @@ def get_model_name_to_model_object(model_name):
             "\nCheck model names passed, it does not match any of the available models under `models.py` file.")
 
 
-@log_inputs_and_output
 def get_lr_scheduler(scheduler_name, optimizer, train_loader, total_epochs, max_lr=10, step_size=1, gamma=0.9
                      , pct_start=0.20, anneal_strategy="linear", div_factor=10, final_div_factor=100,
                      enable_three_phase=False, enable_cycle_momentum=True, verbose=0):
@@ -323,7 +316,6 @@ def get_lr_scheduler(scheduler_name, optimizer, train_loader, total_epochs, max_
                                                    verbose=verbose)
 
 
-@log_inputs_and_output
 def run_lr_finder(model, criterion, start_lr, train_loader, optimizer,
                   optimizer_type="adam",
                   weight_decay=5e-4,
@@ -363,7 +355,6 @@ def run_lr_finder(model, criterion, start_lr, train_loader, optimizer,
     plt.show()
 
 
-@log_inputs_and_output
 def get_string_to_criterion(cri_str):
     if "crossentropy" in cri_str:
         return nn.CrossEntropyLoss()
@@ -467,7 +458,6 @@ def test(model, device, test_loader, test_acc, test_losses):
     test_acc.append(100. * correct / len(test_loader.dataset))
 
 
-@log_inputs_and_output
 def run_train_and_test(model, device, train_loader, test_loader, optimizer, criterion, scheduler, epochs=1):
     """
     The main Training and Testing Utility function that leverages above `train` and `test` functions.
@@ -501,7 +491,6 @@ def run_train_and_test(model, device, train_loader, test_loader, optimizer, crit
                 test_losses=test_losses, test_accuracy=test_accuracy)
 
 
-@log_inputs_and_output
 def plot_cifar10_aug_images(train_loader, mean, sdev):
     """
     A utility function to plot CIFAR 10 dataset by using passed train loader instance.
@@ -554,7 +543,6 @@ def plot_cifar10_aug_images(train_loader, mean, sdev):
     plt.show()
 
 
-@log_inputs_and_output
 def get_train_test_datasets(data, model, lr_scheduler=None):
     if "mnist" in data:
         train_transforms = transforms.Compose([
@@ -633,7 +621,6 @@ def get_train_test_datasets(data, model, lr_scheduler=None):
         return train_set, test_set, mean, sdev
 
 
-@log_inputs_and_output
 def check_requirements(requirements_file='requirements.txt'):
     try:
         # Use the 'pip check' command to check if all requirements are already installed
@@ -644,7 +631,6 @@ def check_requirements(requirements_file='requirements.txt'):
         return False  # pip command not found
 
 
-@log_inputs_and_output
 def install_requirements(requirements_file='requirements.txt'):
     if check_requirements(requirements_file):
         print("All requirements already installed.")
@@ -663,7 +649,6 @@ def install_requirements(requirements_file='requirements.txt'):
         print("Error: 'pip' command not found. Please ensure you have Python and pip installed.")
 
 
-@log_inputs_and_output
 def fraction_to_float(value):
     if isinstance(value, str):
         if '/' in value:
