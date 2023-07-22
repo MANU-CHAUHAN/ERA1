@@ -89,7 +89,7 @@ class Cifar10Dataset(torchvision.datasets.CIFAR10):
 
 
 @log_inputs_and_output
-def plot_graphs(*, train_losses, train_accuracy, test_losses, test_accuracy):
+def plot_graphs(train_losses, train_accuracy, test_losses, test_accuracy):
     """
     Plot 2 graphs after training and evaluation is done.
     Plots Training vs Test accuracy and Training vs Test loss
@@ -119,7 +119,7 @@ def plot_graphs(*, train_losses, train_accuracy, test_losses, test_accuracy):
 
 
 @log_inputs_and_output
-def get_optimizer(model, optim_type="adam", lr=0.001, enable_nesterov=False, momentum_value=0.9, weight_decay=5e-5):
+def get_optimizer(model, optim_type="adam", lr=0.001, enable_nesterov=False, momentum_value=0.9, weight_decay=5e-4):
     """
     Returns optimizer based in passed values
     :return: Instance of `Optimizer` class but of specific type (from SGD or ADAM)
@@ -258,7 +258,7 @@ def train_eval_model(model, train_loader, optimizer, device, epochs=1, test=Fals
 
 
 @log_inputs_and_output
-def get_model_name_to_model_object(*, model_name):
+def get_model_name_to_model_object(model_name):
     """
     Returns the model for the corresponding name passed.
     :param model_name: type:str, model name
@@ -279,7 +279,7 @@ def get_model_name_to_model_object(*, model_name):
 
 
 @log_inputs_and_output
-def get_lr_scheduler(*, scheduler_name, optimizer, train_loader, total_epochs, max_lr=10, step_size=1, gamma=0.9
+def get_lr_scheduler(scheduler_name, optimizer, train_loader, total_epochs, max_lr=10, step_size=1, gamma=0.9
                      , pct_start=0.20, anneal_strategy="linear", div_factor=10, final_div_factor=100,
                      enable_three_phase=False, enable_cycle_momentum=True, verbose=0):
     """
@@ -324,7 +324,7 @@ def get_lr_scheduler(*, scheduler_name, optimizer, train_loader, total_epochs, m
 
 
 @log_inputs_and_output
-def run_lr_finder(*, model, criterion, start_lr, train_loader, optimizer,
+def run_lr_finder(model, criterion, start_lr, train_loader, optimizer,
                   optimizer_type="adam",
                   weight_decay=5e-4,
                   num_iterations=300, max_lr=10,
@@ -470,7 +470,7 @@ def test(model, device, test_loader, test_acc, test_losses):
 
 
 @log_inputs_and_output
-def run_train_and_test(*, model, device, train_loader, test_loader, optimizer, criterion, scheduler, epochs=1):
+def run_train_and_test(model, device, train_loader, test_loader, optimizer, criterion, scheduler, epochs=1):
     """
     The main Training and Testing Utility function that leverages above `train` and `test` functions.
 
