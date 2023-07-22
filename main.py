@@ -23,7 +23,6 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescri
     pass
 
 
-
 arg_parser = argparse.ArgumentParser(
     description="Training Deep Learning program for various models with multiple options.",
     formatter_class=CustomFormatter
@@ -177,7 +176,7 @@ criterion = utils.get_string_to_criterion(args.cri)
 
 dataloader_args = dict(shuffle=True, batch_size=BATCH, num_workers=1, pin_memory=False)
 
-train_set, test_set = utils.get_train_test_datasets(data=dataset, model=model, lr_scheduler=lr_scheduler)
+train_set, test_set, mean, sdev = utils.get_train_test_datasets(data=dataset, model=model, lr_scheduler=lr_scheduler)
 
 # data loaders on data sets
 train_loader = torch.utils.data.DataLoader(
@@ -193,6 +192,8 @@ if find_lr:
     utils.run_lr_finder(model=model, criterion=criterion, start_lr=args.start_lr, max_lr=args.max_lr,
                         train_loader=train_loader, optimizer=optimizer, num_iterations=find_lr_iter)
 else:
+    if "cifar10" in dataset:
+        utils.plot_cifar10_aug_images(train_loader=train_loader, mean=mean, sdev=sdev)
     lr_scheduler = utils.get_lr_scheduler(scheduler_name=lr_scheduler,
                                           optimizer=optimizer,
                                           step_size=args.step_size,
