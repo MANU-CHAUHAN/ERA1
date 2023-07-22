@@ -49,7 +49,7 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    '--lr_scheduler', default="steplr", type=str,
+    '--lr_scheduler', default="OneCycleLR", type=str,
     help="Type of Learning Rate scheduler to use.\nAvailable options: 1. `StepLR` 2. `OneCycleLR`"
 )
 
