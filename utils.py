@@ -344,7 +344,10 @@ def run_lr_finder(model, criterion, start_lr, train_loader, optimizer,
 
     """
     from torch_lr_finder import LRFinder
-    print("\n\nRunning LR finder... 🔍👀  ")
+
+    print(f"\n\nRunning LR finder... 🔍👀 \nStart LR: {start_lr}, End LR: {max_lr}, iterations: {num_iterations},"
+          f" step mode: {step_mode}\n")
+    
     if not optimizer:
         optimizer = get_optimizer(model=model, optim_type=optimizer_type, lr=start_lr, weight_decay=weight_decay)
 
