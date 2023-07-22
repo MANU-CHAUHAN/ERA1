@@ -99,7 +99,7 @@ def plot_graphs(*, train_losses, train_accuracy, test_losses, test_accuracy):
     plt.show()
 
 
-def get_optimizer(model, optim_type="SGD", lr=0.001, enable_nesterov=False, momentum_value=0.9, weight_decay=1e-5):
+def get_optimizer(model, optim_type="adam", lr=0.001, enable_nesterov=False, momentum_value=0.9, weight_decay=5e-5):
     """
     Returns optimizer based in passed values
     :return: Instance of `Optimizer` class but of specific type (from SGD or ADAM)
@@ -302,7 +302,7 @@ def get_lr_scheduler(*, scheduler_name, optimizer, train_loader, total_epochs, m
 
 def run_lr_finder(model, criterion, start_lr, train_loader, optimizer, *,
                   optimizer_type="adam",
-                  weight_decay=4e-4,
+                  weight_decay=5e-4,
                   num_iterations=300, max_lr=10,
                   log_lr=True, step_mode="exp"):
     """
