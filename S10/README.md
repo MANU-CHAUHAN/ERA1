@@ -145,3 +145,19 @@ Input size (MB): 0.01
 Forward/backward pass size (MB): 6.44
 Params size (MB): 25.07
 Estimated Total Size (MB): 31.53
+
+
+
+#### Notebooks and process:
+
+1. Tried with the given architecture straight forward and the augmnetations.
+
+2. LR Finder turned out to be very helpful, however the stepping in log space seems to better cover LRs than linear stepping.
+
+3. The plot and suggested LR is used to pick the Max LR for the OneCycleLR and `div_factor=10` while `final_div_factor=100`, experimented with 1000 too.
+
+4. There are 3 Notebooks that cross 90% test accuracy, these are usual Jupyter Notebooks that have code and plots together.
+
+5. The `direct` notebook clones repo and runs the command line tool to find lr and then the suggessted LR is used to OneCycle Policy with all required arguments passed (file name: `S10_direct_in_colab.ipynb`).
+
+   
