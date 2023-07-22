@@ -300,7 +300,7 @@ def get_lr_scheduler(*, scheduler_name, optimizer, train_loader, total_epochs, m
                                                    verbose=verbose)
 
 
-def run_lr_finder(model, criterion, start_lr, train_loader, optimizer, *,
+def run_lr_finder(*, model, criterion, start_lr, train_loader, optimizer,
                   optimizer_type="adam",
                   weight_decay=5e-4,
                   num_iterations=300, max_lr=10,

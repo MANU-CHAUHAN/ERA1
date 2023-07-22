@@ -75,7 +75,7 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    '--max_lr', default=1.23e-03, type=float,
+    '--max_lr', default=10, type=float,
     help="The maximum LR to be used with the One Cycle LR Scheduler."
 )
 
