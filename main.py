@@ -196,7 +196,9 @@ else:
     lr_scheduler = utils.get_lr_scheduler(scheduler_name=lr_scheduler,
                                           optimizer=optimizer,
                                           step_size=args.step_size,
-                                          gamma=args.gamma, total_epochs=epochs, pct_start=pct_start,
+                                          gamma=args.gamma,
+                                          total_epochs=epochs,
+                                          pct_start=pct_start,
                                           anneal_strategy=anneal_fn,
                                           train_loader=train_loader)
 

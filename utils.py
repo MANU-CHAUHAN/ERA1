@@ -256,8 +256,8 @@ def get_model_name_to_model_object(*, model_name):
             "\nCheck model names passed, it does not match any of the available models under `models.py` file.")
 
 
-def get_lr_scheduler(*, scheduler_name, optimizer, train_loader, max_lr=1.25E-03, step_size=1, gamma=0.9,
-                     total_epochs=10, pct_start=0.20, anneal_strategy="linear", div_factor=10, final_div_factor=100,
+def get_lr_scheduler(*, scheduler_name, optimizer, train_loader, total_epochs, max_lr=10, step_size=1, gamma=0.9
+                     , pct_start=0.20, anneal_strategy="linear", div_factor=10, final_div_factor=100,
                      enable_three_phase=False, enable_cycle_momentum=True, verbose=0):
     """
     Helper function to get Learning Rate Scheduler.
