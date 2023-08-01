@@ -663,6 +663,61 @@ def fraction_to_float(value):
         return float(value)
 
 
+def get_transforms(*, padding, crop, horizontal_flip, normalize, mean_value, sdev, min_output_size_after_padding=40,
+                   crop_size=32):
+    transform_list = []
+    if padding:
+        transform_list.append(
+            A.PadIfNeeded(min_height=min_output_size_after_padding, min_width=min_output_size_after_padding,
+                          border_mode=cv2.BORDER_CONSTANT, value=mean_value, always_apply=True))
+    if crop:
+        transform_list.append(A.RandomCrop(crop_size, crop_size))  # Randomly crop the images to 32x32
+    if horizontal_flip:
+        transform_list.append(A.HorizontalFlip())  # Randomly flip images horizontally
+    if normalize:
+        transform_list.append(A.Normalize(mean=mean_value, std=sdev))
+
+    # Combine all transformations using albumentations.Compose
+    data_transform = A.Compose(transform_list)
+
+    def transform_fn(image):
+        return data_transform(image=image)['image']
+
+    return transform_fn
+
+
+def display_misclassified_images(batches, true_labels_list, predicted_labels_list, classes):
+    num_images_per_batch = 10
+    num_batches = len(batches)
+
+
+    fig, axes = plt.subplots(num_batches, num_images_per_batch, figsize=(16, 4 * num_batches))
+
+    for batch_idx, batch in enumerate(batches):
+        misclassified_indices = \
+            np.where(np.array(true_labels_list[batch_idx]) != np.array(predicted_labels_list[batch_idx]))[0]
+        misclassified_indices = np.random.choice(misclassified_indices, num_images_per_batch, replace=False)
+
+        for i, idx in enumerate(misclassified_indices):
+            img = np.transpose(batch[idx], (1, 2, 0))
+            label_true = classes[true_labels_list[batch_idx][idx]]
+            label_pred = classes[predicted_labels_list[batch_idx][idx]]
+
+            ax = axes[batch_idx, i]
+            ax.imshow(img)
+            ax.set_title(f'True: {label_true}\nPredicted: {label_pred}')
+            ax.axis('off')
+
+        # Remove any remaining empty subplots
+        for j in range(len(misclassified_indices), num_images_per_batch):
+            axes[batch_idx, j].axis('off')
+
+    plt.subplots_adjust(hspace=1.2)
+
+    plt.tight_layout()
+    plt.show()
+
+
 if __name__ == "__main__":
     pass
     # mean, sdev = get_mean_and_std(torchvision.datasets.CIFAR10(root="./data", train=True,
