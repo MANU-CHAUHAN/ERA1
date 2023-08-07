@@ -546,7 +546,7 @@ def plot_cifar10_aug_images(train_loader, mean, sdev):
     plt.show()
 
 
-def get_train_test_datasets(data, model, cutout_prob=0.2, lr_scheduler=None):
+def get_train_test_datasets(data, model_name, cutout_prob=0.2, lr_scheduler=None):
     if "mnist" in data:
         train_transforms = transforms.Compose([
             transforms.RandomRotation((-6.9, 6.9), fill=(1,)),
@@ -577,7 +577,7 @@ def get_train_test_datasets(data, model, cutout_prob=0.2, lr_scheduler=None):
                                                                    download=True,
                                                                    transform=transforms.Compose(
                                                                        [transforms.ToTensor()])))
-        if "resnet" in model and "onecyc" in lr_scheduler.lower():
+        if "resnet" in model_name and "onecycle" in lr_scheduler.lower():
             train_transforms = A.Compose([
                 A.Normalize(mean=mean, std=sdev, always_apply=True),
                 A.PadIfNeeded(min_height=40, min_width=40, border_mode=cv2.BORDER_CONSTANT, value=mean,

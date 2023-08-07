@@ -183,7 +183,7 @@ criterion = utils.get_string_to_criterion(args.cri)
 
 dataloader_args = dict(shuffle=True, batch_size=BATCH, num_workers=1, pin_memory=False)
 
-train_set, test_set, mean, sdev = utils.get_train_test_datasets(data=dataset, model=model, lr_scheduler=lr_scheduler,
+train_set, test_set, mean, sdev = utils.get_train_test_datasets(data=dataset, model_name=model, lr_scheduler=lr_scheduler,
                                                                 cutout_prob=cutout_prob)
 
 # data loaders on data sets

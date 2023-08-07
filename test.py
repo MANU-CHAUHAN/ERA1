@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     dataloader_args = dict(shuffle=True, batch_size=BATCH, num_workers=1, pin_memory=False)
 
-    train_set, test_set, mean, sdev = utils.get_train_test_datasets(data=dataset, model=model, lr_scheduler=lr_scheduler)
+    train_set, test_set, mean, sdev = utils.get_train_test_datasets(data=dataset, model_name=model, lr_scheduler=lr_scheduler)
 
     # data loaders on data sets
     train_loader = torch.utils.data.DataLoader(
