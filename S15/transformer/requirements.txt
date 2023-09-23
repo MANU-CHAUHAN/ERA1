@@ -2,4 +2,4 @@ torch
 torchtext
 torchmetrics
 datasets
-toeknizers
+tokenizers
