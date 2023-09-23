@@ -150,43 +150,49 @@ tb_logger = TensorBoardLogger(save_dir="../logs/")
 
 model = LitS10CustomResNet(train_set)
 
-# trainer = pl.Trainer(fast_dev_run=10)
+success = 0
 
-trainer = pl.Trainer(auto_lr_find=True,
-                     logger=tb_logger,
-                     callbacks=[MyCallback()],
-                     benchmark=True,
-                     enable_checkpointing=True,
-                     max_epochs=10,
-                     enable_model_summary=True
-                     )
+if __name__ == "__main__":
+    for flag in ["debug", "train"]:
 
-tuner = Tuner(trainer)
-# tuner.lr_find(model=model, train_dataloaders=train_loader, val_dataloaders=test_loader, min_lr=1e-3, max_lr=10)
-# trainer.tune(model)
+        if flag == "debug":
+            trainer = pl.Trainer(fast_dev_run=10)
+            print("\n", '⚡️' * 20, "| Debug Successful")
+        else:
+            print("\nStarting training part...\n", '⚡️' * 20, end="\n")
 
-# Run learning rate finder
-lr_finder = trainer.tuner.lr_find(model)
+            trainer = pl.Trainer(auto_lr_find=True,
+                                 logger=tb_logger,
+                                 callbacks=[MyCallback()],
+                                 benchmark=True,
+                                 enable_checkpointing=True,
+                                 max_epochs=10,
+                                 enable_model_summary=True
+                                 )
 
-# Results can be found in
-print(lr_finder.results)
+            tuner = Tuner(trainer)
 
-# Plot with
-fig = lr_finder.plot(suggest=True)
-fig.show()
+            # Run learning rate finder
+            lr_finder = trainer.tuner.lr_find(model, min_lr=1e-3, max_lr=1, num_training=200)
 
-# Pick point based on plot, or get suggestion
-new_lr = lr_finder.suggestion()
+            print(lr_finder.results)
 
-# update hparams of the model
-model.hparams.lr = new_lr
+            # Plot
+            # fig = lr_finder.plot(suggest=True)
+            # fig.show()
 
-# Fit model
-trainer.fit(model, val_dataloaders=test_loader)
+            # Pick point based on plot, or get suggestion
+            new_lr = lr_finder.suggestion()
 
-# Auto-scale batch size by growing it exponentially (default)
-# tuner.scale_batch_size(model, mode="power")
+            # update hparams of the model
+            model.hparams.lr = new_lr
 
-# Fit as normal with new batch size
-# trainer.fit(model)
-# trainer.test(ckpt_path="best", dataloaders=test_loader)
+            # Fit model
+            trainer.fit(model, val_dataloaders=test_loader)
+
+            # Auto-scale batch size by growing it exponentially (default)
+            # tuner.scale_batch_size(model, mode="power")
+
+            # Fit as normal with new batch size
+            # trainer.fit(model)
+            # trainer.test(ckpt_path="best", dataloaders=test_loader)

@@ -2,3 +2,5 @@ torch
 torchvision
 torch-lr-finder
 pandas
+pytorch_lightning
+torchmetrics
