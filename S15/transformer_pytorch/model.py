@@ -27,9 +27,7 @@ class FeedForwardBlock(nn.Module):
         # idea is to get d_model dimension and expand these to higher number, usually twice or more,
         # then shrink back to original d_model dimension
         self.linear1 = nn.Linear(d_model, d_ff)  # w1 and b1
-
         self.dropout = nn.Dropout(dropout)
-
         self.linear2 = nn.Linear(d_ff, d_model)  # w2 and b2
 
     def forward(self, x):
@@ -44,12 +42,12 @@ class FeedForwardBlock(nn.Module):
 class InputEmbeddings(nn.Module):
     def __init__(self, d_model: int, vocab_size: int) -> None:
         super().__init__()
-        # d_model is model's dimension, raw sequences will be tranformed via this
+        # d_model is model's dimension, raw sequences will be transformed via this
         # here `d_model` is equal to all concatenated heads' dimension 
-        # (MODEL CAPACITY is defined by this)
+        # (MODEL CAPACITY is defined by d_model)
         self.d_model = d_model
         self.vocab_size = vocab_size
-        self.embedding = nn.Embedding(vocab_size, d_model)
+        self.embedding = nn.Embedding(vocab_size, d_model)  # input vocab size
 
     def forward(self, x):
         # (batch, seq_len) -> (batch, seq_len, d_model)
@@ -103,12 +101,7 @@ class ResidualConnection(nn.Module):
         self.norm = LayerNormalization()
 
     def forward(self, x, sublayer):
-        a = self.norm(x)
-        a = sublayer(a)
-        a = self.dropout(a)
-        r = x + a
-        return r
-        # return x + self.dropout(sublayer(self.norm(x)))
+        return x + self.dropout(sublayer(self.norm(x)))
 
 
 class MultiHeadAttentionBlock(nn.Module):
@@ -164,7 +157,7 @@ class MultiHeadAttentionBlock(nn.Module):
         key = self.w_k(k)
         value = self.w_v(v)
 
-        # breakdown or re-arange `d_model` into `h * d_k` parts via `view function` on all 3
+        # breakdown or re-arrange `d_model` into `h * d_k` parts via `view function` on all 3
         #
         # observe the transpose here of dims 1 and 2 which is seq_len, h --> h, seq_len 
         #   # basically re-arranging the dimensions to have batch and then head number
@@ -178,7 +171,7 @@ class MultiHeadAttentionBlock(nn.Module):
 
         value = value.view(value.shape[0], value.shape[1], self.h, self.d_k).transpose(1, 2)
 
-        # send the re-aranged K, Q, V (for each HEAD now) and mask to calculate attention scores
+        # send the re-arranged K, Q, V (for each HEAD now) and mask to calculate attention scores
 
         x, self.attention_scores = MultiHeadAttentionBlock.attention(query=query,
                                                                      key=key,
@@ -210,12 +203,13 @@ class EncoderBlock(nn.Module):
     def forward(self, x, src_mask):
         # residual connection's forward expects `x` and `sublayer`
         # the first level of residual connection of q, k, v for encoder's self attention is processed by these two lines
-        # here q, k, v all are same (x) [Encoder]
+        # here q, k, v all are same (x) for Encoder
         x = self.residual_connection[0](x, lambda x: self.self_attention_block(x, x, x, src_mask))
 
         # next we send this processed block to feed forward, which has residual connection too
         # 
-        # original x has been updated already, now x refers to incoming data from previous block of self-attention in Encoder
+        # original x has been updated already, now x refers to incoming data from previous block of self-attention
+        # block in Encoder
 
         # now sublayer is a feed forward block
         x = self.residual_connection[1](x, self.feed_forward_block)
@@ -252,10 +246,11 @@ class DecoderBlock(nn.Module):
         # this is self-attention in Decoder, the first attention block in architecture diagram
         x = self.residual_connections[0](x, lambda x: self.self_attention_block(x, x, x, tgt_mask))
 
-        # this is the cross attention block, getting query from itself while K and V comes from encoded output from Encoder
-        x = self.residual_connections[1](x, lambda x: self.cross_attention_block(x, encoder_output, encoder_output, src_mask))
+        # this is the cross attention block, getting Q from itself while K and V comes from encoded output from Encoder
+        x = self.residual_connections[1](x, lambda x: self.cross_attention_block(x, encoder_output, encoder_output,
+                                                                                 src_mask))
 
-        # Feed Forward block as the thrid block
+        # Feed Forward block as the third block
         x = self.residual_connections[2](x, self.feed_forward_block)
 
         return x
@@ -343,8 +338,8 @@ def build_transformer(src_vocab_size: int,
 
     # create list to hold Encoder blocks
     encoder_blocks = []
-    for _ in range(N):
-        # create or intialize sub-layers for current Encoder block
+    for _ in range(N):  # repeat for N
+        # create or initialize sub-layers for current Encoder block
         encoder_self_attention = MultiHeadAttentionBlock(d_model=d_model, h=h, dropout=dropout)
         feed_forward_block = FeedForwardBlock(d_model=d_model, d_ff=d_ff, dropout=dropout)
 
@@ -359,7 +354,7 @@ def build_transformer(src_vocab_size: int,
     # create a list to hold Decoder blocks
     decoder_blocks = []
     for _ in range(N):  # have `N` total blocks
-        # initalize sub-layers for each block
+        # initialize sub-layers for each block
         decoder_self_attention_block = MultiHeadAttentionBlock(d_model=d_model, h=h, dropout=dropout)
 
         decoder_cross_attention_block = MultiHeadAttentionBlock(d_model=d_model, h=h, dropout=dropout)
