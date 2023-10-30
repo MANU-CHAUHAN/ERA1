@@ -3,23 +3,29 @@ from pathlib import Path
 
 def get_config():
     return {
-        "batch_size": 2048,
-        "num_epochs": 10,
-        "lr": 10 ** -4,
-        "seq_len": 350,
-        "d_model": 256,
-        "lang_src": "en",
-        "lang_tgt": "it",
-        "model_folder": "weights",
-        "model_basename": "tmodel_",
-        "preload": True,
-        "tokenizer_file": "tokenizer_{0}.json",
-        "experiment_name": "runs/tmodel",
-        "enable_amp": True,
-        'd_ff': 512,
-        'N': 6,
-        'h': 8,
-        'param_sharing': False
+        "batch_size"        : 2048,
+        "num_epochs"        : 10,
+        "lr"                : 10 ** -4,
+        'max_lr'            : 10 ** -3,
+        'pct_start'         : 1 / 10,
+        'initial_div_factor': 10,
+        'final_div_factor'  : 10,
+        'anneal_strategy'   : "linear",
+        'three_phase'       : True,
+        "seq_len"           : 350,
+        "d_model"           : 256,
+        "lang_src"          : "en",
+        "lang_tgt"          : "it",
+        "model_folder"      : "weights",
+        "model_basename"    : "tmodel_",
+        "preload"           : True,
+        "tokenizer_file"    : "tokenizer_{0}.json",
+        "experiment_name"   : "runs/tmodel",
+        "enable_amp"        : True,
+        'd_ff'              : 512,
+        'N'                 : 6,
+        'h'                 : 8,
+        'param_sharing'     : False
     }
 
 

@@ -190,7 +190,7 @@ class MultiHeadAttentionBlock(nn.Module):
         #                                                              mask=mask,
         #                                                              dropout=self.dropout)
         with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False):
-            x = F.scaled_dot_product_attention(query=query, key=key, value=value, attn_mask=mask, dropout_p=0.1)
+            x = F.scaled_dot_product_attention(query=query, key=key, value=value, attn_mask=mask.bool(), dropout_p=0.1)
 
         # combine all heads together now
         # reverse of previous transpose to restore original dimensions, also used `contiguous()`

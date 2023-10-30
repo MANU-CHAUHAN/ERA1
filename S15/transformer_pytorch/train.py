@@ -157,6 +157,11 @@ def get_ds(config):
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
 
+def get_lr(optimizer):
+    for p_group in optimizer.param_groups:
+        return p_group['lr']
+
+
 def get_model(config, vocab_src_len, vocab_tgt_len):
     model = build_transformer(src_vocab_size=vocab_src_len,
                               tgt_vocab_size=vocab_tgt_len,
@@ -168,7 +173,7 @@ def get_model(config, vocab_src_len, vocab_tgt_len):
                               d_ff=config['d_ff'])
 
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"\n⚡️⚡️Number of model parameters: {trainable_params}")
+    print(f"\n⚡️⚡️Number of model parameters: {trainable_params:,}")
 
     return model
 
@@ -180,7 +185,7 @@ def train_model(config):
 
     # get the device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    print(f"👀Using device: {device}")
 
     # Weights folder
     Path(config['model_folder']).mkdir(parents=True, exist_ok=True)
@@ -197,6 +202,14 @@ def train_model(config):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], eps=1e-9)
     # optimizer = torch.optim.AdamW(model.parameters(), lr=config['lr'], eps=1e-9)
+
+    one_cycle_lr = OneCycleLR(optimizer=optimizer, max_lr=config['max_lr'],
+                              steps_per_epoch=len(train_dataloader),
+                              epochs=config['num_epochs'], pct_start=config['pct_start'],
+                              anneal_strategy=config['anneal_strategy'],
+                              div_factor=config['initial_div_factor'],
+                              final_div_factor=config['final_div_factor'],
+                              three_phase=config['three_phase'])
 
     # if a model is specified for preload before training then load it
     initial_epoch = 0
@@ -355,13 +368,12 @@ def run_validation(model,
             excepted.append(target_text)
             predicted.append(model_out_text)
 
-            # print source, target and model output
-            print_msg('-' * console_width)
-            print_msg(f"{f'SOURCE: ':>12}{source_text[0]}")
-            print_msg(f"{f'TARGET: ':>12}{target_text[0]}")
-            print_msg(f"{f'PREDICTED: ':>12}{model_out_text[0]}")
-
             if count == num_examples:
+                # print source, target and model output
+                print_msg('-' * console_width)
+                print_msg(f"{f'SOURCE: ':>12}{source_text}")
+                print_msg(f"{f'TARGET: ':>12}{target_text}")
+                print_msg(f"{f'PREDICTED: ':>12}{model_out_text}")
                 print_msg('-' * console_width)
 
     if writer:
