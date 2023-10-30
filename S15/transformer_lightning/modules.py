@@ -141,7 +141,8 @@ class MultiHeadAttentionBlock(nn.Module):
 
         # if mask is provided, set those to very low value, representing -inf, to avoid looking ahead
         if mask is not None:
-            attention_scores.masked_fill_(mask == 0, -1e9)
+            _MASKING_VALUE = -1e+30 if attention_scores.dtype == torch.float32 else -1e+4
+            attention_scores.masked_fill_(mask == 0, _MASKING_VALUE)
 
         # apply softmax on the attention scores
         attention_scores = attention_scores.softmax(dim=-1)
