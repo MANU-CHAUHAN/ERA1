@@ -291,9 +291,8 @@ def train_model(config):
                 scheduler.step()
             lr_v = scheduler.get_last_lr()
             lrs.append(lr_v)
-            print("\n⚡️LR: ", lr_v)
 
-            batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}"})
+            batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}", "lr": f"{lr_v}"})
 
             # log the loss
             writer.add_scalar('train loss', loss.item(), global_step)
