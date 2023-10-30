@@ -15,7 +15,8 @@ def get_config():
         "preload": True,
         "tokenizer_file": "tokenizer_{0}.json",
         "experiment_name": "runs/tmodel",
-        "enable_amp": True
+        "enable_amp": True,
+        'd_ff': 512
     }
 
 

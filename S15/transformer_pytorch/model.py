@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class LayerNormalization(nn.Module):
@@ -132,13 +133,13 @@ class MultiHeadAttentionBlock(nn.Module):
         d_k = query.shape[-1]
 
         # (batch, h, seq_len, d_k) --> (batch, h, seq_len, seq_len)
-        #   # eg Q = 6x512  K = 6x512  (seq_len, embd_dim) 
+        #   # eg Q = 6x512  K = 6x512  (seq_len, embd_dim)
         # scale as per the paper
         attention_scores = (query @ key.transpose(-2, -1)) / (math.sqrt(d_k))
 
         # if mask is provided, set those to very low value, representing -inf, to avoid looking ahead
         if mask is not None:
-            _MASKING_VALUE = -1e+30 if attention_scores.dtype == torch.float32 else -1e+4
+            _MASKING_VALUE = -1e+9 if attention_scores.dtype == torch.float32 else -1e+4
             attention_scores.masked_fill_(mask == 0, _MASKING_VALUE)
 
         # apply softmax on the attention scores
@@ -151,6 +152,12 @@ class MultiHeadAttentionBlock(nn.Module):
         # (batch, h, seq_len, seq_len) --> (batch, h, seq_len, d_k)
         # return is tuple of final weighted value and attention scores (incase needed later)
         return attention_scores @ value, attention_scores
+        # # Efficient implementation equivalent to the following:
+        # scale_factor = 1 / math.sqrt(d_k)
+        # attn_mask = mask.masked_fill(not mask, -float('inf')) if mask.dtype == torch.bool else mask
+        # attn_weight = torch.softmax((query @ key.transpose(-2, -1) * scale_factor) + attn_mask, dim=-1)
+        # attn_weight = dropout(attn_weight)
+        # return attn_weight @ value, attn_weight
 
     def forward(self, q, k, v, mask):
         # use incoming q, k, v to get transformed q, k, v

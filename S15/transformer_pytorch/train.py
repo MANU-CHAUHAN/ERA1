@@ -147,10 +147,12 @@ def get_ds(config):
     print(f"Max len of source sentence: {max_len_src}")
     print(f"Max len of target sentence: {max_len_tgt}")
 
-    train_dataloader = DataLoader(
-        train_ds, batch_size=config['batch_size'], shuffle=True, collate_fn=collate_fn)
-    val_dataloader = DataLoader(
-        val_ds, batch_size=1, shuffle=True, collate_fn=collate_fn)
+    train_dataloader = DataLoader(train_ds, batch_size=config['batch_size'],
+                                  shuffle=True, collate_fn=collate_fn,
+                                  pin_memory=True, num_workers=2)
+    val_dataloader = DataLoader(val_ds, batch_size=16,
+                                shuffle=True, collate_fn=collate_fn,
+                                pin_memory=True, num_workers=2)
 
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
@@ -160,7 +162,8 @@ def get_model(config, vocab_src_len, vocab_tgt_len):
                               tgt_vocab_size=vocab_tgt_len,
                               src_seq_len=config['seq_len'],
                               tgt_seq_len=config['seq_len'],
-                              d_model=config['d_model'])
+                              d_model=config['d_model'],
+                              d_ff=config['d_ff'])
     return model
 
 
@@ -176,8 +179,8 @@ def train_model(config):
     # Weights folder
     Path(config['model_folder']).mkdir(parents=True, exist_ok=True)
 
-    train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt = get_ds(
-        config)
+    train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt = get_ds(config)
+
     model = get_model(config=config,
                       vocab_src_len=tokenizer_src.get_vocab_size(),
                       vocab_tgt_len=tokenizer_tgt.get_vocab_size()
@@ -186,7 +189,8 @@ def train_model(config):
     # Summary Writer for Tensorboard
     writer = SummaryWriter(config['experiment_name'])
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], eps=1e-9)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], eps=1e-9)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config['lr'], eps=1e-9)
 
     # if a model is specified for preload before training then load it
     initial_epoch = 0
@@ -216,7 +220,7 @@ def train_model(config):
         ignore_index=tokenizer_src.token_to_id('[PAD]'), label_smoothing=0.1)
 
     autocast_device_check = "cuda" if torch.cuda.is_available() else "cpu"
-    autocast_dtype_check = torch.float16 if torch.cuda.is_available() else torch.bfloat16
+    autocast_dtype_check = torch.float16 if autocast_device_check == "cuda" else torch.bfloat16
 
     for epoch in range(initial_epoch, config['num_epochs']):
         torch.cuda.empty_cache()
@@ -234,12 +238,12 @@ def train_model(config):
             decoder_mask = batch['decoder_mask'].to(
                 device)  # (b, 1, seq_len, seq_len)
 
-            with torch.autocast(device_type=autocast_device_check,
-                                dtype=autocast_dtype_check,
-                                enabled=enable_amp):
+            with torch.autocast(device_type="cuda",  # autocast_device_check,
+                                dtype=torch.float16,  # autocast_dtype_check,
+                                enabled=True):
                 # run the tensors through the encoder, decoder and projection layer
-                encoder_output = model.encode(
-                    src=encoder_input, src_mask=encoder_mask)  # (b, seq_len, d_model)
+                encoder_output = model.encode(src=encoder_input, src_mask=encoder_mask)  # (b, seq_len, d_model)
+
                 decoder_output = model.decode(encoder_output=encoder_output,
                                               src_mask=encoder_mask,
                                               tgt=decoder_input,
@@ -251,45 +255,45 @@ def train_model(config):
                 label = batch['label'].to(device)  # (b, seq_len)
 
                 # compute the loss using cross entropy
-                loss = loss_fn(
-                    proj_output.view(-1, tokenizer_tgt.get_vocab_size()), label.view(-1))
+                loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get_vocab_size()), label.view(-1))
 
             batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
-
-            # Scales loss. Calls ``backward()`` on scaled loss to create scaled gradients.
-            scaler.scale(loss).backward()
-
-            # log the loss
-            writer.add_scalar('train loss', loss.item(), global_step)
-            writer.flush()
 
             # loss.backward()
             # optimizer.step()
             # optimizer.zero_grad(set_to_none=True)
 
+            # Scales loss. Calls ``backward()`` on scaled loss to create scaled gradients.
+            scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad(set_to_none=True)
+
+            # log the loss
+            writer.add_scalar('train loss', loss.item(), global_step)
+            writer.flush()
 
             global_step += 1
 
         # run validation at end of each epoch
         run_validation(model=model,
                        validation_ds=val_dataloader,
-                       tokenizer_src=tokenizer_src, tokenizer_tgt=tokenizer_tgt, max_len=config[
-                           'seq_len'],
-                       device=device, print_msg=lambda msg: batch_iterator.write(
-                           msg),
-                       global_step=global_step, writer=writer, num_examples=2)
+                       tokenizer_src=tokenizer_src,
+                       tokenizer_tgt=tokenizer_tgt,
+                       max_len=config['seq_len'],
+                       device=device, print_msg=lambda msg: batch_iterator.write(msg),
+                       global_step=global_step,
+                       writer=writer,
+                       num_examples=2)
 
         # Save the model at end of each epoch
         model_filename = get_weights_file_path(config, f"{epoch:02d}")
         torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
+            'epoch'               : epoch,
+            'model_state_dict'    : model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-            'global_step': global_step,
-            'scaler': scaler.state_dict()
+            'global_step'         : global_step,
+            'scaler'              : scaler.state_dict()
         }, model_filename)
 
 
@@ -339,7 +343,7 @@ def run_validation(model,
             source_text = batch['src_text'][0]
             target_text = batch['tgt_text'][0]
             model_out_text = tokenizer_tgt.decode(
-                model_out.detauch().cpu().numpy())
+                model_out.detach().cpu().numpy())
 
             source_texts.append(source_text)
             excepted.append(target_text)
@@ -347,9 +351,9 @@ def run_validation(model,
 
             # print source, target and model output
             print_msg('-' * console_width)
-            print_msg(f"{f'SOURCE: ':>12}{source_text}")
-            print_msg(f"{f'TARGET: ':>12}{target_text}")
-            print_msg(f"{f'PREDICTED: ':>12}{model_out_text}")
+            print_msg(f"{f'SOURCE: ':>12}{source_text[0]}")
+            print_msg(f"{f'TARGET: ':>12}{target_text[0]}")
+            print_msg(f"{f'PREDICTED: ':>12}{model_out_text[0]}")
 
             if count == num_examples:
                 print_msg('-' * console_width)
@@ -414,11 +418,11 @@ def collate_fn(batch):
     return {
         "encoder_input": pad_sequence(encoder_inputs, batch_first=True),
         "decoder_input": pad_sequence(decoder_inputs, batch_first=True),
-        "encoder_mask": pad_sequence(encoder_mask, batch_first=True),
-        "decoder_mask": pad_sequence(decoder_mask, batch_first=True),
-        "label": pad_sequence(label, batch_first=True),
-        "src_text": src_text,
-        "tgt_text": tgt_text
+        "encoder_mask" : pad_sequence(encoder_mask, batch_first=True),
+        "decoder_mask" : pad_sequence(decoder_mask, batch_first=True),
+        "label"        : pad_sequence(label, batch_first=True),
+        "src_text"     : src_text,
+        "tgt_text"     : tgt_text
     }
 
 
