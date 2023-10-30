@@ -163,6 +163,8 @@ def get_model(config, vocab_src_len, vocab_tgt_len):
                               src_seq_len=config['seq_len'],
                               tgt_seq_len=config['seq_len'],
                               d_model=config['d_model'],
+                              N=config['N'],
+                              h=config['h'],
                               d_ff=config['d_ff'])
     return model
 
@@ -189,8 +191,8 @@ def train_model(config):
     # Summary Writer for Tensorboard
     writer = SummaryWriter(config['experiment_name'])
 
-    # optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], eps=1e-9)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=config['lr'], eps=1e-9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], eps=1e-9)
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=config['lr'], eps=1e-9)
 
     # if a model is specified for preload before training then load it
     initial_epoch = 0
@@ -238,8 +240,8 @@ def train_model(config):
             decoder_mask = batch['decoder_mask'].to(
                 device)  # (b, 1, seq_len, seq_len)
 
-            with torch.autocast(device_type="cuda",  # autocast_device_check,
-                                dtype=torch.float16,  # autocast_dtype_check,
+            with torch.autocast(device_type="cpu",  # autocast_device_check,
+                                dtype=torch.bfloat16,  # autocast_dtype_check,
                                 enabled=True):
                 # run the tensors through the encoder, decoder and projection layer
                 encoder_output = model.encode(src=encoder_input, src_mask=encoder_mask)  # (b, seq_len, d_model)
