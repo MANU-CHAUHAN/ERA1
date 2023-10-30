@@ -47,8 +47,7 @@ def greedy_decode(model,
             break
 
         # build mask for target (check model.py for more detail on how mask are used and created)
-        decoder_mask = causal_mask(size=decoder_input.size(
-            1)).type_as(source_mask).to(device)
+        decoder_mask = causal_mask(size=decoder_input.size(1)).type_as(source_mask).to(device)
 
         # calculate output
         out = model.decode(encoder_output,
@@ -114,7 +113,7 @@ def get_ds(config):
                                            lang=config['lang_tgt'])
 
     # keep 90% data for train and 10% for val
-    train_ds_size = int(0.9 * len(ds_raw))
+    train_ds_size = int(0.97 * len(ds_raw))
     val_ds_size = len(ds_raw) - train_ds_size
     train_ds_raw, val_ds_raw = random_split(
         ds_raw, [train_ds_size, val_ds_size])
@@ -200,20 +199,21 @@ def train_model(config):
     # Summary Writer for Tensorboard
     writer = SummaryWriter(config['experiment_name'])
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], eps=1e-9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], betas=(0.9, 0.98), eps=1.0e-9)
     # optimizer = torch.optim.AdamW(model.parameters(), lr=config['lr'], eps=1e-9)
 
-    one_cycle_lr = OneCycleLR(optimizer=optimizer, max_lr=config['max_lr'],
-                              steps_per_epoch=len(train_dataloader),
-                              epochs=config['num_epochs'], pct_start=config['pct_start'],
-                              anneal_strategy=config['anneal_strategy'],
-                              div_factor=config['initial_div_factor'],
-                              final_div_factor=config['final_div_factor'],
-                              three_phase=config['three_phase'])
+    scheduler = OneCycleLR(optimizer=optimizer, max_lr=config['max_lr'],
+                           steps_per_epoch=len(train_dataloader),
+                           epochs=config['num_epochs'], pct_start=config['pct_start'],
+                           anneal_strategy=config['anneal_strategy'],
+                           div_factor=config['initial_div_factor'],
+                           final_div_factor=config['final_div_factor'],
+                           three_phase=config['three_phase'])
 
     # if a model is specified for preload before training then load it
     initial_epoch = 0
     global_step = 0
+    lrs = []
 
     if config['preload']:
         model_filename = get_weights_file_path(
@@ -276,8 +276,6 @@ def train_model(config):
                 # compute the loss using cross entropy
                 loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get_vocab_size()), label.view(-1))
 
-            batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
-
             # loss.backward()
             # optimizer.step()
             # optimizer.zero_grad(set_to_none=True)
@@ -287,6 +285,11 @@ def train_model(config):
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad(set_to_none=True)
+            if scheduler:
+                scheduler.step()
+            lrs.append(scheduler.get_last_lr())
+
+            batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
 
             # log the loss
             writer.add_scalar('train loss', loss.item(), global_step)
@@ -303,7 +306,7 @@ def train_model(config):
                        device=device, print_msg=lambda msg: batch_iterator.write(msg),
                        global_step=global_step,
                        writer=writer,
-                       num_examples=2)
+                       num_examples=4)
 
         # Save the model at end of each epoch
         model_filename = get_weights_file_path(config, f"{epoch:02d}")
