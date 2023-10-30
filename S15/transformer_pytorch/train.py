@@ -368,7 +368,7 @@ def run_validation(model,
             excepted.append(target_text)
             predicted.append(model_out_text)
 
-            if count == num_examples:
+            if count <= num_examples:
                 # print source, target and model output
                 print_msg('-' * console_width)
                 print_msg(f"{f'SOURCE: ':>12}{source_text}")

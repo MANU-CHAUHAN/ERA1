@@ -189,7 +189,7 @@ class MultiHeadAttentionBlock(nn.Module):
         #                                                              value=value,
         #                                                              mask=mask,
         #                                                              dropout=self.dropout)
-        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=False):
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True):
             x = F.scaled_dot_product_attention(query=query, key=key, value=value, attn_mask=mask.bool(), dropout_p=0.1)
 
         # combine all heads together now
