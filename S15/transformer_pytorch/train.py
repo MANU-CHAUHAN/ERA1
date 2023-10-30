@@ -25,6 +25,8 @@ from tokenizers.pre_tokenizers import Whitespace
 import torchmetrics
 from torch.utils.tensorboard import SummaryWriter
 
+PAD_IDX = 0.0
+
 
 # inference
 def greedy_decode(model,
@@ -65,8 +67,7 @@ def greedy_decode(model,
         decoder_input = torch.cat(
             [
                 decoder_input,
-                torch.empty(1, 1).type_as(source).fill_(
-                    next_word.item()).to(device)
+                torch.empty(1, 1).type_as(source).fill_(next_word.item()).to(device)
             ],
             dim=1
         )
@@ -90,8 +91,7 @@ def get_or_build_tokenizer(config, ds, lang):
     if not Path.exists(tokenizer_path):
         tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
         tokenizer.pre_tokenizer = Whitespace()
-        trainer = WordLevelTrainer(
-            special_tokens=["[UNK]", "[PAD]", "[SOS]", "[EOS]"], min_frequency=2)
+        trainer = WordLevelTrainer(special_tokens=["[UNK]", "[PAD]", "[SOS]", "[EOS]"], min_frequency=2)
         tokenizer.train_from_iterator(
             get_all_sentences(ds, lang), trainer=trainer)
         tokenizer.save(str(tokenizer_path))
@@ -113,6 +113,8 @@ def get_ds(config):
     tokenizer_tgt = get_or_build_tokenizer(config=config,
                                            ds=ds_raw,
                                            lang=config['lang_tgt'])
+    if PAD_IDX is None:
+        tokenizer_tgt.token_to_id("[PAD]").float()
 
     # keep 90% data for train and 10% for val
     train_ds_size = int(0.9 * len(ds_raw))
@@ -297,16 +299,17 @@ def train_model(config):
 
             global_step += 1
 
-        # run validation at end of each epoch
-        run_validation(model=model,
-                       validation_ds=val_dataloader,
-                       tokenizer_src=tokenizer_src,
-                       tokenizer_tgt=tokenizer_tgt,
-                       max_len=config['seq_len'],
-                       device=device, print_msg=lambda msg: batch_iterator.write(msg),
-                       global_step=global_step,
-                       writer=writer,
-                       num_examples=4)
+        # run validation at end of specific epochs
+        if epoch == config['num_epochs']-1:
+            run_validation(model=model,
+                           validation_ds=val_dataloader,
+                           tokenizer_src=tokenizer_src,
+                           tokenizer_tgt=tokenizer_tgt,
+                           max_len=config['seq_len'],
+                           device=device, print_msg=lambda msg: batch_iterator.write(msg),
+                           global_step=global_step,
+                           writer=writer,
+                           num_examples=10)
 
         # Save the model at end of each epoch
         model_filename = get_weights_file_path(config, f"{epoch:02d}")
@@ -436,11 +439,11 @@ def collate_fn(batch):
         tgt_text.append(b['tgt_text'])
 
     return {
-        "encoder_input": pad_sequence(encoder_inputs, batch_first=True),
-        "decoder_input": pad_sequence(decoder_inputs, batch_first=True),
-        "encoder_mask" : pad_sequence(encoder_mask, batch_first=True),
-        "decoder_mask" : pad_sequence(decoder_mask, batch_first=True),
-        "label"        : pad_sequence(label, batch_first=True),
+        "encoder_input": pad_sequence(encoder_inputs, batch_first=True, padding_value=PAD_IDX),
+        "decoder_input": pad_sequence(decoder_inputs, batch_first=True,  padding_value=PAD_IDX),
+        "encoder_mask" : pad_sequence(encoder_mask, batch_first=True,  padding_value=PAD_IDX),
+        "decoder_mask" : pad_sequence(decoder_mask, batch_first=True, padding_value=PAD_IDX),
+        "label"        : pad_sequence(label, batch_first=True, padding_value=PAD_IDX),
         "src_text"     : src_text,
         "tgt_text"     : tgt_text
     }
