@@ -166,6 +166,10 @@ def get_model(config, vocab_src_len, vocab_tgt_len):
                               N=config['N'],
                               h=config['h'],
                               d_ff=config['d_ff'])
+
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"\n⚡️⚡️Number of model parameters: {trainable_params}")
+
     return model
 
 
