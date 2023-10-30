@@ -215,6 +215,9 @@ def train_model(config):
     loss_fn = nn.CrossEntropyLoss(
         ignore_index=tokenizer_src.token_to_id('[PAD]'), label_smoothing=0.1)
 
+    autocast_device_check = "cuda" if torch.cuda.is_available() else "cpu"
+    autocast_dtype_check = torch.float16 if torch.cuda.is_available() else torch.bfloat16
+
     for epoch in range(initial_epoch, config['num_epochs']):
         torch.cuda.empty_cache()
         model.train()
@@ -231,8 +234,8 @@ def train_model(config):
             decoder_mask = batch['decoder_mask'].to(
                 device)  # (b, 1, seq_len, seq_len)
 
-            with torch.autocast(device_type="cuda" if torch.cuda.is_available() else "cpu",
-                                dtype=torch.float16 if torch.cuda.is_available() else torch.bfloat16,
+            with torch.autocast(device_type=autocast_device_check,
+                                dtype=autocast_dtype_check,
                                 enabled=enable_amp):
                 # run the tensors through the encoder, decoder and projection layer
                 encoder_output = model.encode(
