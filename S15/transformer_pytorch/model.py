@@ -2,6 +2,9 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from config import get_config
+
+config = get_config()
 
 
 class LayerNormalization(nn.Module):
@@ -348,6 +351,13 @@ def build_transformer(src_vocab_size: int,
 
     # create list to hold Encoder blocks
     encoder_blocks = []
+    # create a list to hold Decoder blocks
+    decoder_blocks = []
+
+    # In case `parameter sharing` is enabled, reduce block number by 2
+    if config['param_sharing'] is True:
+        N = N // 2
+
     for _ in range(N):  # repeat for N
         # create or initialize sub-layers for current Encoder block
         encoder_self_attention = MultiHeadAttentionBlock(d_model=d_model, h=h, dropout=dropout)
@@ -361,8 +371,6 @@ def build_transformer(src_vocab_size: int,
         # add this 1 block to Encoder block list
         encoder_blocks.append(encoder_block)
 
-    # create a list to hold Decoder blocks
-    decoder_blocks = []
     for _ in range(N):  # have `N` total blocks
         # initialize sub-layers for each block
         decoder_self_attention_block = MultiHeadAttentionBlock(d_model=d_model, h=h, dropout=dropout)
@@ -379,6 +387,12 @@ def build_transformer(src_vocab_size: int,
 
         # add this 1 decoder block to decoder blocks list
         decoder_blocks.append(decoder_block)
+
+    if config['param_sharing'] is True:
+        e1, e2, e3 = encoder_blocks
+        d1, d2, d3 = decoder_blocks
+        encoder_blocks = [e1, e2, e3, e3, e2, e1]
+        decoder_blocks = [d1, d2, d3, d3, d2, d1]
 
     # link encoders
     encoder = Encoder(layers=nn.ModuleList(encoder_blocks))

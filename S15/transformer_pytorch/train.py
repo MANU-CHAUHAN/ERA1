@@ -150,7 +150,7 @@ def get_ds(config):
     train_dataloader = DataLoader(train_ds, batch_size=config['batch_size'],
                                   shuffle=True, collate_fn=collate_fn,
                                   pin_memory=True, num_workers=2)
-    val_dataloader = DataLoader(val_ds, batch_size=16,
+    val_dataloader = DataLoader(val_ds, batch_size=1,
                                 shuffle=True, collate_fn=collate_fn,
                                 pin_memory=True, num_workers=2)
 
