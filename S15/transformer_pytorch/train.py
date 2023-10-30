@@ -289,9 +289,10 @@ def train_model(config):
             optimizer.zero_grad(set_to_none=True)
             if scheduler:
                 scheduler.step()
-            lrs.append(scheduler.get_last_lr())
+            lr_v = scheduler.get_last_lr()
+            lrs.append(lr_v)
 
-            batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
+            batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}", "lr": f"{lr_v}:5.4f"})
 
             # log the loss
             writer.add_scalar('train loss', loss.item(), global_step)
