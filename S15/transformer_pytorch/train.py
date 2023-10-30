@@ -1,3 +1,5 @@
+import multiprocessing
+
 from model import build_transformer
 from dataset import BilingualDataset, causal_mask
 from config import get_config, get_weights_file_path
@@ -148,7 +150,7 @@ def get_ds(config):
 
     train_dataloader = DataLoader(train_ds, batch_size=config['batch_size'],
                                   shuffle=True, collate_fn=collate_fn,
-                                  pin_memory=True, num_workers=2)
+                                  pin_memory=True, num_workers=multiprocessing.cpu_count() - 1)
     val_dataloader = DataLoader(val_ds, batch_size=1,
                                 shuffle=True, collate_fn=collate_fn,
                                 pin_memory=True, num_workers=2)
@@ -249,16 +251,14 @@ def train_model(config):
             train_dataloader, desc=f"Processing Epoch: {epoch:02d}")
 
         for batch in batch_iterator:
-            encoder_input = batch['encoder_input'].to(device)  # (b, seq_len)
-            decoder_input = batch['decoder_input'].to(device)  # (b, seq_len)
+            encoder_input = batch['encoder_input'].to(device, non_blocking=True)  # (b, seq_len)
+            decoder_input = batch['decoder_input'].to(device, non_blocking=True)  # (b, seq_len)
 
-            encoder_mask = batch['encoder_mask'].to(
-                device)  # (b, 1, 1, seq_len)
-            decoder_mask = batch['decoder_mask'].to(
-                device)  # (b, 1, seq_len, seq_len)
+            encoder_mask = batch['encoder_mask'].to(device, non_blocking=True)  # (b, 1, 1, seq_len)
+            decoder_mask = batch['decoder_mask'].to(device, non_blocking=True)  # (b, 1, seq_len, seq_len)
 
-            with torch.autocast(device_type="cpu",  # autocast_device_check,
-                                dtype=torch.bfloat16,  # autocast_dtype_check,
+            with torch.autocast(device_type="cuda",  # autocast_device_check,
+                                dtype=torch.float16,  # autocast_dtype_check,
                                 enabled=True):
                 # run the tensors through the encoder, decoder and projection layer
                 encoder_output = model.encode(src=encoder_input, src_mask=encoder_mask)  # (b, seq_len, d_model)
@@ -347,12 +347,11 @@ def run_validation(model,
     with torch.no_grad():
         for batch in validation_ds:
             count += 1
-            encoder_input = batch['encoder_input'].to(device)
-            encoder_mask = batch['encoder_mask'].to(device)
+            encoder_input = batch['encoder_input'].to(device, non_blocking=True)
+            encoder_mask = batch['encoder_mask'].to(device, non_blocking=True)
 
             # check that the batch siz is 1
-            assert encoder_input.size(
-                0) == 1, "Batch size for val loader must be 1"
+            assert encoder_input.size(0) == 1, "Batch size for val loader must be 1"
 
             model_out = greedy_decode(model=model,
                                       source=encoder_input,
