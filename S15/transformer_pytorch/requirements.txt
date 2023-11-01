@@ -3,3 +3,4 @@ torchtext
 torchmetrics
 datasets
 tokenizers
+lion-pytorch

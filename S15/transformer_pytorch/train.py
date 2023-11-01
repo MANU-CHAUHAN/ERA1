@@ -1,31 +1,29 @@
 import multiprocessing
-
-from model import build_transformer
-from dataset import BilingualDataset, causal_mask
-from config import get_config, get_weights_file_path
-from torch.nn.utils.rnn import pad_sequence
-import torch
-import torchtext.datasets as datasets
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader, random_split
-from torch.optim.lr_scheduler import LambdaLR, OneCycleLR
-
 import os
-import warnings
-from tqdm import tqdm
 from pathlib import Path
+import warnings
 
 # Huggingface datasets and tokenizers
 from datasets import load_dataset
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
-from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace
-
-import torchmetrics
+from tokenizers.trainers import WordLevelTrainer
+import torch
+import torch.nn as nn
+from torch.nn.utils.rnn import pad_sequence
+from torch.optim.lr_scheduler import OneCycleLR
+from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
+import torchmetrics
+from tqdm import tqdm
+
+from config import get_config, get_weights_file_path
+from dataset import BilingualDataset, causal_mask
+from model import build_transformer
 
 PAD_IDX = 0.0
+torch.cuda.amp.autocast(enabled=True)
 
 
 # inference
@@ -176,7 +174,7 @@ def get_model(config, vocab_src_len, vocab_tgt_len):
                               d_ff=config['d_ff'])
 
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"\n⚡️⚡️Number of model parameters: {trainable_params:,}")
+    print(f"\n⚡️⚡️Number of model parameters: {trainable_params:,}\n")
 
     return model
 
@@ -203,16 +201,21 @@ def train_model(config):
     # Summary Writer for Tensorboard
     writer = SummaryWriter(config['experiment_name'])
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], betas=(0.9, 0.98), eps=1.0e-9)
-    # optimizer = torch.optim.AdamW(model.parameters(), lr=config['lr'], eps=1e-9)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], betas=(0.9, 0.98), eps=1.0e-9)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config['lr'], eps=1e-9)
 
-    scheduler = OneCycleLR(optimizer=optimizer, max_lr=config['max_lr'],
+    # optimizer = Lion(model.parameters(), lr=config['lr']/3, weight_decay=1e-2)
+
+    scheduler = OneCycleLR(optimizer=optimizer,
+                           max_lr=config['max_lr'],
                            steps_per_epoch=len(train_dataloader),
-                           epochs=config['num_epochs'], pct_start=config['pct_start'],
+                           epochs=config['num_epochs'],
+                           pct_start=config['pct_start'],
                            anneal_strategy=config['anneal_strategy'],
                            div_factor=config['initial_div_factor'],
                            final_div_factor=config['final_div_factor'],
                            three_phase=config['three_phase'])
+    # scheduler = None
 
     # if a model is specified for preload before training then load it
     initial_epoch = 0
@@ -287,12 +290,14 @@ def train_model(config):
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad(set_to_none=True)
-            if scheduler:
+            if scheduler is not None:
                 scheduler.step()
-            lr_v = scheduler.get_last_lr()
-            lrs.append(lr_v)
+                lr_v = scheduler.get_last_lr()
+                lrs.append(lr_v)
 
-            batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}", "lr": f"{lr_v}"})
+                batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}", "lr": f"{lr_v}"})
+            else:
+                batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}"})
 
             # log the loss
             writer.add_scalar('train loss', loss.item(), global_step)
@@ -301,7 +306,7 @@ def train_model(config):
             global_step += 1
 
         # run validation at end of specific epochs
-        if epoch == config['num_epochs']-1:
+        if epoch == config['num_epochs'] - 1:
             run_validation(model=model,
                            validation_ds=val_dataloader,
                            tokenizer_src=tokenizer_src,
@@ -441,8 +446,8 @@ def collate_fn(batch):
 
     return {
         "encoder_input": pad_sequence(encoder_inputs, batch_first=True, padding_value=PAD_IDX),
-        "decoder_input": pad_sequence(decoder_inputs, batch_first=True,  padding_value=PAD_IDX),
-        "encoder_mask" : pad_sequence(encoder_mask, batch_first=True,  padding_value=PAD_IDX),
+        "decoder_input": pad_sequence(decoder_inputs, batch_first=True, padding_value=PAD_IDX),
+        "encoder_mask" : pad_sequence(encoder_mask, batch_first=True, padding_value=PAD_IDX),
         "decoder_mask" : pad_sequence(decoder_mask, batch_first=True, padding_value=PAD_IDX),
         "label"        : pad_sequence(label, batch_first=True, padding_value=PAD_IDX),
         "src_text"     : src_text,

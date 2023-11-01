@@ -25,7 +25,8 @@ def get_config():
         'd_ff'              : 512,
         'N'                 : 6,
         'h'                 : 8,
-        'param_sharing'     : False
+        'param_sharing'     : True,
+        'accumulation_steps': 4
     }
 
 
