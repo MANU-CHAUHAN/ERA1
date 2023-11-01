@@ -249,6 +249,9 @@ def train_model(config):
     autocast_device_check = "cuda" if torch.cuda.is_available() else "cpu"
     autocast_dtype_check = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
 
+    accumulate_gradients = config['gradient_accumulation']
+    accumulate_gradients_steps = config['accumulation_steps']
+
     for epoch in range(initial_epoch, config['num_epochs']):
         torch.cuda.empty_cache()
         model.train()
@@ -256,15 +259,15 @@ def train_model(config):
         batch_iterator = tqdm(
             train_dataloader, desc=f"Processing Epoch: {epoch:02d}")
 
-        for batch in batch_iterator:
+        for idx, batch in enumerate(batch_iterator):
             encoder_input = batch['encoder_input'].to(device, non_blocking=True)  # (b, seq_len)
             decoder_input = batch['decoder_input'].to(device, non_blocking=True)  # (b, seq_len)
 
             encoder_mask = torch.as_tensor(batch['encoder_mask']).to(device, non_blocking=True)  # (b, 1, 1, seq_len)
             decoder_mask = batch['decoder_mask'].to(device, non_blocking=True)  # (b, 1, seq_len, seq_len)
 
-            with torch.autocast(device_type="cpu",  # autocast_device_check,
-                                dtype=torch.bfloat16,
+            with torch.autocast(device_type="cuda",  # autocast_device_check,
+                                dtype=autocast_dtype_check,
                                 enabled=True):
                 # run the tensors through the encoder, decoder and projection layer
                 encoder_output = model.encode(src=encoder_input, src_mask=encoder_mask)  # (b, seq_len, d_model)
@@ -281,6 +284,8 @@ def train_model(config):
 
                 # compute the loss using cross entropy
                 loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get_vocab_size()), label.view(-1))
+                if accumulate_gradients:
+                    loss = loss / accumulate_gradients_steps
 
             # loss.backward()
             # optimizer.step()
@@ -288,9 +293,15 @@ def train_model(config):
 
             # Scales loss. Calls ``backward()`` on scaled loss to create scaled gradients.
             scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-            optimizer.zero_grad(set_to_none=True)
+            if accumulate_gradients and idx % accumulate_gradients_steps == 0:
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad(set_to_none=True)
+            else:
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad(set_to_none=True)
+
             if scheduler is not None:
                 scheduler.step()
                 lr_v = scheduler.get_last_lr()

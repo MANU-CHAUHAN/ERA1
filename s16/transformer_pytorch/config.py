@@ -5,8 +5,8 @@ def get_config():
     return {
         "batch_size"        : 2048,
         "num_epochs"        : 10,
-        "lr"                : 10 ** -4,
-        'max_lr'            : 10 ** -3,
+        "lr"                : 10e-4,
+        'max_lr'            : 10e-3,
         'pct_start'         : 1 / 10,
         'initial_div_factor': 10,
         'final_div_factor'  : 10,
@@ -26,6 +26,7 @@ def get_config():
         'N'                 : 6,
         'h'                 : 8,
         'param_sharing'     : True,
+        'gradient_accumulation': False,
         'accumulation_steps': 4
     }
 
