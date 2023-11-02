@@ -427,8 +427,8 @@ def collate_fn(batch):
     batch:  list of tuples if your __getitem__ function from a Dataset subclass returns a tuple,
      or just a normal list if your Dataset subclass returns only one element (here dict).
     """
-    encoder_token_max_len = max(x["encoder_token_len"] for x in batch) + 2
-    decoder_token_max_len = max(x["decoder_token_len"] for x in batch) + 1
+    # encoder_token_max_len = max(x["encoder_token_len"] for x in batch) + 2
+    # decoder_token_max_len = max(x["decoder_token_len"] for x in batch) + 1
 
     encoder_inputs = []
     decoder_inputs = []
@@ -444,47 +444,8 @@ def collate_fn(batch):
                 (b['decoder_token_len'] > b['encoder_token_len'] + 10):
             continue
 
-        # enc_num_padding_tokens = encoder_token_max_len - b['encoder_token_len']
-        # dec_num_padding_tokens = decoder_token_max_len - b['decoder_token_len']
-        #
-        # if enc_num_padding_tokens < 0 or dec_num_padding_tokens < 0:
-        #     raise ValueError("Negative padding!")
-
-        # encoder_input = torch.cat(
-        #     [
-        #         b['encoder_input'],
-        #         torch.tensor([b['pad_token']] * enc_num_padding_tokens, dtype=torch.int64)
-        #     ],
-        #     dim=0
-        # )
-
-        # encoder_mask = (encoder_input != b['pad_token']).unsqueeze(0).unsqueeze(0).unsqueeze(0).int()  # 1,1,seq_len
-
-        # Add only <s> token
-        # decoder_input = torch.cat(
-        #     [
-        #         b['decoder_input'],
-        #         torch.tensor([b['pad_token']] * dec_num_padding_tokens, dtype=torch.int64)
-        #     ],
-        #     dim=0
-        # )
-
-        # Add only </s> token
-        # label = torch.cat(
-        #     [
-        #         b['label'],
-        #         torch.tensor([b['pad_token']] * dec_num_padding_tokens, dtype=torch.int64)
-        #     ],
-        #     dim=0
-        # )
-
-        # decoder_mask = ((decoder_input != b['pad_token']).unsqueeze(0).int() & causal_mask(
-        #     decoder_input.size(0))).unsqueeze(0)
-
         encoder_inputs.append(b['encoder_input'])
         decoder_inputs.append(b['decoder_input'])
-        # encoder_masks.append(encoder_mask)
-        # decoder_masks.append(decoder_mask)
         labels.append(b['label'])
         src_texts.append(b['src_text'])
         tgt_texts.append(b['tgt_text'])
@@ -492,6 +453,7 @@ def collate_fn(batch):
     enc_padded = pad_sequence(encoder_inputs, batch_first=True)
     dec_padded = pad_sequence(decoder_inputs, batch_first=True)
     label_padded = pad_sequence(labels, batch_first=True)
+
     for x in enc_padded:
         encoder_mask = (x != pad_token).unsqueeze(0).unsqueeze(0).unsqueeze(0).int()
         encoder_masks.append(encoder_mask)
@@ -500,16 +462,8 @@ def collate_fn(batch):
         decoder_mask = ((x != pad_token).unsqueeze(0).int() & causal_mask(
             x.size(0))).unsqueeze(0)
         decoder_masks.append(decoder_mask)
-    # r = {
-    #     "encoder_input": torch.vstack(encoder_inputs),
-    #     "decoder_input": torch.vstack(decoder_inputs),
-    #     "encoder_mask" : torch.vstack(encoder_masks),
-    #     "decoder_mask" : torch.vstack(decoder_masks),
-    #     "label"        : torch.vstack(labels),
-    #     "src_text"     : src_texts,
-    #     "tgt_text"     : tgt_texts
-    # }
-    r = {
+
+    return {
         "encoder_input": enc_padded,
         "decoder_input": dec_padded,
         "encoder_mask" : torch.vstack(encoder_masks),
@@ -518,8 +472,6 @@ def collate_fn(batch):
         "src_text"     : src_texts,
         "tgt_text"     : tgt_texts
     }
-
-    return r
 
 
 if __name__ == "__main__":
