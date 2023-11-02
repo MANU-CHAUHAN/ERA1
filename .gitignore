@@ -29,6 +29,7 @@
 .vscode/
 
 # Ignore tensorboard runs
-runs/*
+**/runs/*
 
+**/weights/*
 .DS_Store
