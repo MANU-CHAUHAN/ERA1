@@ -220,6 +220,7 @@ def train_model(config):
     # scheduler = None
 
     # if a model is specified for preload before training then load it
+    run_val = True
     initial_epoch = 0
     global_step = 0
     lrs = []
@@ -332,15 +333,16 @@ def train_model(config):
             'scaler'              : scaler.state_dict()
         }, model_filename)
 
-    run_validation(model=model,
-                   validation_ds=val_dataloader,
-                   tokenizer_src=tokenizer_src,
-                   tokenizer_tgt=tokenizer_tgt,
-                   max_len=config['seq_len'],
-                   device=device, print_msg=lambda msg: batch_iterator.write(msg),
-                   global_step=global_step,
-                   writer=writer,
-                   num_examples=10)
+        if run_val:
+            run_validation(model=model,
+                           validation_ds=val_dataloader,
+                           tokenizer_src=tokenizer_src,
+                           tokenizer_tgt=tokenizer_tgt,
+                           max_len=config['seq_len'],
+                           device=device, print_msg=lambda msg: batch_iterator.write(msg),
+                           global_step=global_step,
+                           writer=writer,
+                           num_examples=2)
 
 
 def run_validation(model,
