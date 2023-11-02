@@ -308,8 +308,11 @@ def train_model(config):
             scheduler.step()
             lr_v = scheduler.get_last_lr()
             lrs.append(lr_v)
-
-            batch_iterator.set_postfix({"loss": f"{loss.item() * accumulate_gradients_steps:8.5f}", "lr": f"{lr_v}"})
+            if accumulate_gradients:
+                batch_iterator.set_postfix(
+                    {"loss": f"{loss.item() * accumulate_gradients_steps:8.5f}", "lr": f"{lr_v}"})
+            else:
+                batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}", "lr": f"{lr_v}"})
             # else:
             #     batch_iterator.set_postfix({"loss": f"{loss.item() * accumulate_gradients_steps:8.5f}"})
 
@@ -318,18 +321,6 @@ def train_model(config):
             writer.flush()
 
             global_step += 1
-
-        # run validation at end of specific epochs
-        if epoch == config['num_epochs'] - 1:
-            run_validation(model=model,
-                           validation_ds=val_dataloader,
-                           tokenizer_src=tokenizer_src,
-                           tokenizer_tgt=tokenizer_tgt,
-                           max_len=config['seq_len'],
-                           device=device, print_msg=lambda msg: batch_iterator.write(msg),
-                           global_step=global_step,
-                           writer=writer,
-                           num_examples=10)
 
         # Save the model at end of each epoch
         model_filename = get_weights_file_path(config, f"{epoch:02d}")
@@ -340,6 +331,16 @@ def train_model(config):
             'global_step'         : global_step,
             'scaler'              : scaler.state_dict()
         }, model_filename)
+
+    run_validation(model=model,
+                   validation_ds=val_dataloader,
+                   tokenizer_src=tokenizer_src,
+                   tokenizer_tgt=tokenizer_tgt,
+                   max_len=config['seq_len'],
+                   device=device, print_msg=lambda msg: batch_iterator.write(msg),
+                   global_step=global_step,
+                   writer=writer,
+                   num_examples=10)
 
 
 def run_validation(model,
