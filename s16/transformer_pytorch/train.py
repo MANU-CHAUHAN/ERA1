@@ -152,10 +152,10 @@ def get_ds(config):
 
     train_dataloader = DataLoader(train_ds, batch_size=config['batch_size'],
                                   shuffle=True, collate_fn=collate_fn,
-                                  pin_memory=True, num_workers=1)  # multiprocessing.cpu_count() - 1)
+                                  pin_memory=True, num_workers=multiprocessing.cpu_count() - 1)
     val_dataloader = DataLoader(val_ds, batch_size=1,
                                 shuffle=True, collate_fn=collate_fn,
-                                pin_memory=True, num_workers=1)
+                                pin_memory=True, num_workers=multiprocessing.cpu_count() - 1)
 
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
