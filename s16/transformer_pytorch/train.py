@@ -303,14 +303,14 @@ def train_model(config):
                 scaler.update()
                 optimizer.zero_grad(set_to_none=True)
 
-            if scheduler is not None:
-                scheduler.step()
-                lr_v = scheduler.get_last_lr()
-                lrs.append(lr_v)
+            # if scheduler is not None:
+            scheduler.step()
+            lr_v = scheduler.get_last_lr()
+            lrs.append(lr_v)
 
-                batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}", "lr": f"{lr_v}"})
-            else:
-                batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}"})
+            batch_iterator.set_postfix({"loss": f"{loss.item() * accumulate_gradients_steps:8.5f}", "lr": f"{lr_v}"})
+            # else:
+            #     batch_iterator.set_postfix({"loss": f"{loss.item() * accumulate_gradients_steps:8.5f}"})
 
             # log the loss
             writer.add_scalar('train loss', loss.item(), global_step)
