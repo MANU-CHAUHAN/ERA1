@@ -252,6 +252,7 @@ def train_model(config):
 
     accumulate_gradients = config['gradient_accumulation']
     accumulate_gradients_steps = config['accumulation_steps']
+    tgt_vocab_size = tokenizer_tgt.get_vocab_size()
 
     for epoch in range(initial_epoch, config['num_epochs']):
         torch.cuda.empty_cache()
@@ -284,7 +285,7 @@ def train_model(config):
                 label = batch['label'].to(device)  # (b, seq_len)
 
                 # compute the loss using cross entropy
-                loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get_vocab_size()), label.view(-1))
+                loss = loss_fn(proj_output.view(-1, tgt_vocab_size), label.view(-1))
                 if accumulate_gradients:
                     loss = loss / accumulate_gradients_steps
 
