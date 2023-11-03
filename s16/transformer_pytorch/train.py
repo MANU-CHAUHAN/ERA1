@@ -22,9 +22,22 @@ from config import get_config, get_weights_file_path
 from dataset import BilingualDataset, causal_mask
 from model import build_transformer
 from matplotlib import pyplot as plt
+import glob
 
 PAD_TOKEN = 0.0
 torch.cuda.amp.autocast(enabled=True)
+
+
+def get_last_saved_model(config):
+    model_directory = config['model_folder']
+    model_pattern = config['model_basename'] + "*.pt"
+    model_files = glob.glob(os.path.join(model_directory, model_pattern))
+    model_files.sort(key=os.path.getmtime, reverse=True)
+
+    if model_files:
+        return model_files[0]
+    else:
+        return None
 
 
 # inference
@@ -226,8 +239,7 @@ def train_model(config):
     lrs = []
 
     if config['preload']:
-        model_filename = get_weights_file_path(
-            config=config, epoch=config['num_epochs'])
+        model_filename = get_last_saved_model(config)
 
         print(f"Preloading model {model_filename}")
 
