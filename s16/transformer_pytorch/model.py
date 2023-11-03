@@ -132,29 +132,30 @@ class MultiHeadAttentionBlock(nn.Module):
 
     @staticmethod
     def attention(query, key, value, mask, dropout: nn.Dropout):
+        pass
         # get the incoming head's (last) dimension, let's call it mini-d_model
-        d_k = query.shape[-1]
-
-        # (batch, h, seq_len, d_k) --> (batch, h, seq_len, seq_len)
-        #   # eg Q = 6x512  K = 6x512  (seq_len, embd_dim)
-        # scale as per the paper
-        attention_scores = (query @ key.transpose(-2, -1)) / (math.sqrt(d_k))
-
-        # if mask is provided, set those to very low value, representing -inf, to avoid looking ahead
-        if mask is not None:
-            _MASKING_VALUE = -1e+9 if attention_scores.dtype == torch.float32 else -1e+4
-            attention_scores.masked_fill_(mask == 0, _MASKING_VALUE)
-
-        # apply softmax on the attention scores
-        attention_scores = attention_scores.softmax(dim=-1)
-
-        if dropout is not None:
-            attention_scores = dropout(attention_scores)
-
-        # multiply attention scores with Value
-        # (batch, h, seq_len, seq_len) --> (batch, h, seq_len, d_k)
-        # return is tuple of final weighted value and attention scores (incase needed later)
-        return attention_scores @ value, attention_scores
+        # d_k = query.shape[-1]
+        #
+        # # (batch, h, seq_len, d_k) --> (batch, h, seq_len, seq_len)
+        # #   # eg Q = 6x512  K = 6x512  (seq_len, embd_dim)
+        # # scale as per the paper
+        # attention_scores = (query @ key.transpose(-2, -1)) / (math.sqrt(d_k))
+        #
+        # # if mask is provided, set those to very low value, representing -inf, to avoid looking ahead
+        # if mask is not None:
+        #     _MASKING_VALUE = -1e+4
+        #     attention_scores.masked_fill_(mask == 0, _MASKING_VALUE)
+        #
+        # # apply softmax on the attention scores
+        # attention_scores = attention_scores.softmax(dim=-1)
+        #
+        # if dropout is not None:
+        #     attention_scores = dropout(attention_scores)
+        #
+        # # multiply attention scores with Value
+        # # (batch, h, seq_len, seq_len) --> (batch, h, seq_len, d_k)
+        # # return is tuple of final weighted value and attention scores (incase needed later)
+        # return attention_scores @ value, attention_scores
         # # Efficient implementation equivalent to the following:
         # scale_factor = 1 / math.sqrt(d_k)
         # attn_mask = mask.masked_fill(not mask, -float('inf')) if mask.dtype == torch.bool else mask
@@ -189,7 +190,7 @@ class MultiHeadAttentionBlock(nn.Module):
         #                                                              value=value,
         #                                                              mask=mask,
         #                                                              dropout=self.dropout)
-        with torch.backends.cuda.sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient = False):
+        with torch.backends.cuda.sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient=True):
             x = F.scaled_dot_product_attention(query=query, key=key, value=value, attn_mask=mask.bool(), dropout_p=0.1)
 
         # combine all heads together now
