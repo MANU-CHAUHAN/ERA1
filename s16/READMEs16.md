@@ -1,17 +1,18 @@
 # S16: Speeding up Transformer training
 
-### Implementation:
+### Implementations:
 
-1. Automatic Mixed Precision
-2. Dynamic padding (using `pad_sequence` and no manual pad count calculations)
-3. One Cycle Policy
-4. Parameter sharing
-5. Scaled Dot Product Attention (SDP Kernel context)
-6. Added code for Gradient Accumulation (not used here)
-7. Converted encoder_input and decoder_input Tensors in `_ _ getitem_ _` from `int64` to `int32` to reduce some memory (label in int32 gave error, need to look into loss function)
-8. optimizer.zero_grad(set_to_none=True)
-9. .to(device, non_blocking=True) (where applicable)
-10. Was able to use `batch_size = 64`
+1. English to French dataset
+2. Automatic Mixed Precision
+3. Dynamic padding (using `pad_sequence` and no manual pad count calculations)
+4. One Cycle Policy
+5. Parameter sharing
+6. Scaled Dot Product Attention (SDP Kernel context)
+7. Added code for Gradient Accumulation
+8. Converted encoder_input and decoder_input Tensors in `_ _ getitem_ _` from `int64` to `int32` to reduce some memory (label in int32 gave error, need to look into loss function)
+9. optimizer.zero_grad(set_to_none=True)
+10. `.to(device, non_blocking=True)` (where applicable)
+11. Was able to use `batch_size = 64 (batch size = 72 with 256 d_model)`
 
 #### Defaults:
 
@@ -45,7 +46,7 @@
 
 
 
-#### config changes:
+#### Final 1: config changes
 
 ```python
 cfg['batch_size'] = 64
@@ -102,3 +103,34 @@ Processing Epoch: 22: 100%|██████████| 1788/1788 [09:26<00:0
 Processing Epoch: 23: 100%|██████████| 1788/1788 [09:22<00:00,  3.18it/s, loss=1.64516, lr=[1.3621185962729835e-05]]
 Processing Epoch: 24:  93%|█████████▎| 1662/1788 [08:51<00:40,  3.12it/s, loss=1.55427, lr=[1.3436190176987307e-05]]
 ```
+
+
+
+#### Final 2 with Gradient Accumulation : config changes
+
+```python
+cfg['batch_size'] = 72
+cfg['preload'] = False
+cfg['num_epochs'] = 30
+cfg['d_model'] = 256
+cfg['d_ff'] = 128
+cfg['pct_start'] = 0.2
+cfg['max_lr'] = 10**-3
+cfg['initial_div_factor'] = 10
+cfg['final_div_factor'] = 10
+cfg['gradient_accumulation'] = True
+cfg['gradient_accumulation_steps'] = 40
+
+from train import train_model
+
+train_model(config=cfg)
+```
+
+
+
+#### Training logs:
+
+```
+
+```
+

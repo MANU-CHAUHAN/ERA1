@@ -168,7 +168,7 @@ def get_ds(config):
                                   pin_memory=True, num_workers=multiprocessing.cpu_count() - 1)
     val_dataloader = DataLoader(val_ds, batch_size=1,
                                 shuffle=True, collate_fn=collate_fn,
-                                pin_memory=True, num_workers=multiprocessing.cpu_count() - 1)
+                                pin_memory=True, num_workers=1)
 
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
@@ -308,15 +308,15 @@ def train_model(config):
 
             # Scales loss. Calls ``backward()`` on scaled loss to create scaled gradients.
             scaler.scale(loss).backward()
-            if accumulate_gradients and idx % accumulate_gradients_steps == 0:
-                scaler.step(optimizer)
-                scaler.update()
-                optimizer.zero_grad(set_to_none=True)
+            if accumulate_gradients:
+                if idx % accumulate_gradients_steps == 0:
+                    scaler.step(optimizer)
+                    scaler.update()
+                    optimizer.zero_grad(set_to_none=True)
             else:
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad(set_to_none=True)
-
             # if scheduler is not None:
             scheduler.step()
             lr_v = scheduler.get_last_lr()
