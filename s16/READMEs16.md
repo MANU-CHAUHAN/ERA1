@@ -13,6 +13,7 @@
 9. optimizer.zero_grad(set_to_none=True)
 10. `.to(device, non_blocking=True)` (where applicable)
 11. Was able to use `batch_size = 64 (batch size = 72 with 256 d_model)`
+12. Able to get `per epoch time` in 2nd run to 5 mins and 10+ seconds.
 
 #### Defaults:
 
