@@ -131,6 +131,85 @@ train_model(config=cfg)
 #### Training logs:
 
 ```
+Max len of source sentence: 471
+Max len of target sentence: 482
 
+⚡️⚡️Number of model parameters: 25,824,850
+
+Processing Epoch: 00: 100%|██████████| 1589/1589 [05:10<00:00,  5.12it/s, loss=3.10041, lr=[0.00025001573481590265]]
+Processing Epoch: 01: 100%|██████████| 1589/1589 [05:08<00:00,  5.15it/s, loss=3.09889, lr=[0.0004000314696318053]]
+Processing Epoch: 02: 100%|██████████| 1589/1589 [05:09<00:00,  5.14it/s, loss=2.68248, lr=[0.000550047204447708]]
+Processing Epoch: 03: 100%|██████████| 1589/1589 [05:08<00:00,  5.16it/s, loss=2.03687, lr=[0.0007000629392636107]]
+Processing Epoch: 04: 100%|██████████| 1589/1589 [05:06<00:00,  5.18it/s, loss=2.23102, lr=[0.0008500786740795132]]
+Processing Epoch: 05: 100%|██████████| 1589/1589 [05:08<00:00,  5.15it/s, loss=2.10534, lr=[0.000999905591104584]]
+Processing Epoch: 06: 100%|██████████| 1589/1589 [05:10<00:00,  5.11it/s, loss=1.94918, lr=[0.0008498898562886814]]
+Processing Epoch: 07: 100%|██████████| 1589/1589 [05:09<00:00,  5.13it/s, loss=1.85274, lr=[0.0006998741214727787]]
+Processing Epoch: 08: 100%|██████████| 1589/1589 [05:08<00:00,  5.15it/s, loss=1.81905, lr=[0.0005498583866568761]]
+Processing Epoch: 09: 100%|██████████| 1589/1589 [05:09<00:00,  5.14it/s, loss=1.83035, lr=[0.00039984265184097353]]
+Processing Epoch: 10: 100%|██████████| 1589/1589 [05:10<00:00,  5.12it/s, loss=1.79879, lr=[0.00024982691702507087]]
+Processing Epoch: 11: 100%|██████████| 1589/1589 [05:09<00:00,  5.14it/s, loss=1.75192, lr=[9.999370695381603e-05]]
+Processing Epoch: 12: 100%|██████████| 1589/1589 [05:09<00:00,  5.13it/s, loss=1.79108, lr=[9.499388176065449e-05]]
+Processing Epoch: 13: 100%|██████████| 1589/1589 [05:10<00:00,  5.12it/s, loss=1.68849, lr=[8.999405656749292e-05]]
+Processing Epoch: 14: 100%|██████████| 1589/1589 [05:08<00:00,  5.15it/s, loss=1.84601, lr=[8.499423137433136e-05]]
+Processing Epoch: 15: 100%|██████████| 1589/1589 [05:07<00:00,  5.17it/s, loss=1.80378, lr=[7.999440618116981e-05]]
+Processing Epoch: 16: 100%|██████████| 1589/1589 [05:09<00:00,  5.13it/s, loss=1.95736, lr=[7.499458098800825e-05]]
+Processing Epoch: 17: 100%|██████████| 1589/1589 [05:10<00:00,  5.12it/s, loss=1.71087, lr=[6.999475579484669e-05]]
+Processing Epoch: 18: 100%|██████████| 1589/1589 [05:11<00:00,  5.10it/s, loss=1.71832, lr=[6.499493060168514e-05]]
+Processing Epoch: 19:  34%|███▍      | 543/1589 [01:46<03:24,  5.12it/s, loss=1.72798, lr=[6.328636856273818e-05]]
+```
+
+
+
+#### Resuming training:
+
+```python
+cfg['batch_size'] = 72
+cfg['preload'] = True
+cfg['num_epochs'] = 30
+cfg['d_model'] = 256
+cfg['d_ff'] = 128
+cfg['pct_start'] = 0.2
+cfg['max_lr'] = 10**-3
+cfg['initial_div_factor'] = 10
+cfg['final_div_factor'] = 10
+
+cfg['gradient_accumulation'] = True
+cfg['gradient_accumulation_steps'] = 40
+
+from train import train_model
+
+train_model(config=cfg)
+```
+
+
+
+#### logs:
+
+```
+Max len of source sentence: 471
+Max len of target sentence: 482
+
+⚡️⚡️Number of model parameters: 25,824,850
+
+Preloading model weights/tmodel_20.pt
+Preloaded
+Processing Epoch: 21: 100%|██████████| 1589/1589 [05:15<00:00,  5.04it/s, loss=1.76465, lr=[0.00025001573481590265]]
+Processing Epoch: 22: 100%|██████████| 1589/1589 [05:10<00:00,  5.12it/s, loss=2.01428, lr=[0.0004000314696318053]]
+Processing Epoch: 23: 100%|██████████| 1589/1589 [05:09<00:00,  5.14it/s, loss=1.82859, lr=[0.000550047204447708]]
+Processing Epoch: 24: 100%|██████████| 1589/1589 [05:11<00:00,  5.11it/s, loss=1.74023, lr=[0.0007000629392636107]]
+Processing Epoch: 25: 100%|██████████| 1589/1589 [05:13<00:00,  5.07it/s, loss=1.73396, lr=[0.0008500786740795132]]
+Processing Epoch: 26: 100%|██████████| 1589/1589 [05:11<00:00,  5.11it/s, loss=1.80579, lr=[0.000999905591104584]]
+Processing Epoch: 27: 100%|██████████| 1589/1589 [05:11<00:00,  5.10it/s, loss=1.89716, lr=[0.0008498898562886814]]
+Processing Epoch: 28: 100%|██████████| 1589/1589 [05:10<00:00,  5.11it/s, loss=1.77185, lr=[0.0006998741214727787]]
+Processing Epoch: 29: 100%|██████████| 1589/1589 [05:12<00:00,  5.09it/s, loss=1.65273, lr=[0.0005498583866568761]]
+--------------------------------------------------------------------------------
+    SOURCE: The cavalcade was brilliant, and its march resounded on the pavement.
+    TARGET: La cavalcade était brillante et résonnait sur le pavé.
+ PREDICTED: La cavalcade était brillante et sa marche s ' agitait sur le pavé .
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+    SOURCE: There was nothing extraordinary about the country; the sky was blue, the trees swayed; a flock of sheep passed.
+    TARGET: Mais non! la campagne n’avait rien d’extraordinaire: le ciel était bleu, les arbres se balançaient; un troupeau de moutons passa.
+ PREDICTED: Le ciel était bleu , des arbres , des cris de mouflons , un troupeau de mouflons passa .
 ```
 
