@@ -323,7 +323,7 @@ def train_model(config):
             lrs.append(lr_v)
             if accumulate_gradients:
                 batch_iterator.set_postfix(
-                    {"loss": f"{loss.item() * accumulate_gradients_steps:8.5f}", "lr": f"{lr_v}"})
+                    {"Accumulated scaled loss": f"{loss.item() * accumulate_gradients_steps:8.5f}", "lr": f"{lr_v}"})
             else:
                 batch_iterator.set_postfix({"loss": f"{loss.item():8.5f}", "lr": f"{lr_v}"})
             # else:
